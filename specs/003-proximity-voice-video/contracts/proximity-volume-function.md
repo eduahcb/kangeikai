@@ -18,7 +18,7 @@ export function proximityVolume(
 - Monotonically non-increasing as `distance` increases across `[0, R)`.
 - Output is always clamped to `[0, 1]`.
 
-**Callers**: `ProximityAudioController.ts` calls this once per remote participant per local
+**Callers**: `proximity-audio-controller.ts` calls this once per remote participant per local
 animation frame, using each remote participant's `ProximityRelationship.distance`
 (data-model.md), and applies the result as that participant's LiveKit audio track volume.
 

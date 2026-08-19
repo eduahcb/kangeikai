@@ -28,10 +28,10 @@ research.md.
       `fallbackAvatarType` pure functions in `apps/client/src/lib/entry/validation.ts`
       (depends on T001)
 - [ ] T003 [P] Implement `generateDefaultName()` pure function in
-      `apps/client/src/lib/entry/defaultName.ts` (depends on T001)
+      `apps/client/src/lib/entry/default-name.ts` (depends on T001)
 - [ ] T004 Implement `GuestProfileStore` (`load()`/`save()`, wrapping `localStorage` in
       `try/catch`, using `validation.ts`) in
-      `apps/client/src/lib/entry/GuestProfileStore.ts` (depends on T002, T003)
+      `apps/client/src/lib/entry/guest-profile-store.ts` (depends on T002, T003)
 
 **Checkpoint**: Storage/validation layer ready; no UI yet.
 
@@ -53,9 +53,9 @@ and verify entry succeeds with that identity (spec.md SC-001, SC-003).
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implement `EntryForm.svelte`: name input, avatar-type picker, confirm
+- [ ] T006 [US1] Implement `entry-form.svelte`: name input, avatar-type picker, confirm
       button, blocking submission on an invalid name (FR-002), in
-      `apps/client/src/lib/entry/EntryForm.svelte` (depends on T004)
+      `apps/client/src/lib/entry/entry-form.svelte` (depends on T004)
 - [ ] T007 [US1] Wire `+page.svelte` to render `EntryForm` before mounting the game scene,
       passing the confirmed `displayName`/`avatarType` down per
       `contracts/guest-profile-handoff.md` (FR-009), in `apps/client/src/routes/+page.svelte`
@@ -147,7 +147,7 @@ not empty (spec.md Acceptance Scenario for Story 3).
 
 ```bash
 Task: "Implement isValidName, clampName, isValidAvatarType, fallbackAvatarType in apps/client/src/lib/entry/validation.ts"
-Task: "Implement generateDefaultName() in apps/client/src/lib/entry/defaultName.ts"
+Task: "Implement generateDefaultName() in apps/client/src/lib/entry/default-name.ts"
 ```
 
 ## Implementation Strategy

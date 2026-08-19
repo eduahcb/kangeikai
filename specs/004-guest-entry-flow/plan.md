@@ -84,10 +84,10 @@ apps/
         │       ├── constants.ts               # MAX_NAME_LENGTH, storage key, wordlists
         │       ├── validation.ts               # isValidName, clampName, isValidAvatarType,
         │       │                               # fallbackAvatarType (pure functions)
-        │       ├── defaultName.ts              # generateDefaultName() (pure function)
-        │       ├── GuestProfileStore.ts        # load()/save() wrapping localStorage,
+        │       ├── default-name.ts              # generateDefaultName() (pure function)
+        │       ├── guest-profile-store.ts        # load()/save() wrapping localStorage,
         │       │                               # try/catch fallback (FR-007), uses validation.ts
-        │       └── EntryForm.svelte            # Name input + avatar picker + confirm button
+        │       └── entry-form.svelte            # Name input + avatar picker + confirm button
         └── routes/
             └── +page.svelte                    # (modified) renders EntryForm first; on
                                                   # confirm, mounts the game (features 001–003)
@@ -95,7 +95,7 @@ apps/
 
     tests/
         └── unit/
-            ├── entry-validation.spec.ts        # validation.ts + defaultName.ts
+            ├── entry-validation.spec.ts        # validation.ts + default-name.ts
             └── guest-profile-store.spec.ts     # GuestProfileStore against mocked storage
 ```
 

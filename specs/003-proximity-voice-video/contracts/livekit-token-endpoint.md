@@ -38,5 +38,5 @@ interface LiveKitTokenResponse {
 `identity` MUST stay equal to the Colyseus `sessionId` for the same connection — this is the
 join key `ProximityAudioController` uses to match a LiveKit participant to that participant's
 synced avatar position (data-model.md `ProximityRelationship.remoteSessionId`). Changing this
-correlation requires updating this endpoint, `ProximityAudioController.ts`, and the guest entry
+correlation requires updating this endpoint, `proximity-audio-controller.ts`, and the guest entry
 flow feature (004) together.

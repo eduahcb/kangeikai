@@ -10,7 +10,7 @@ interface GuestProfile {
 }
 ```
 
-**Producer**: `apps/client/src/lib/entry/EntryForm.svelte`, on confirm, via
+**Producer**: `apps/client/src/lib/entry/entry-form.svelte`, on confirm, via
 `apps/client/src/routes/+page.svelte`.
 
 **Consumers**:

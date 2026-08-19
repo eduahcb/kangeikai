@@ -42,6 +42,6 @@ functions, independent of the `EntryForm` component
   `generateDefaultName` are all deterministic given their inputs and don't need a DOM or
   Svelte runtime to test — exactly the kind of logic worth unit-testing directly, keeping the
   Svelte component itself thin (just wiring, not business rules).
-- **Alternatives considered**: Inlining validation directly inside `EntryForm.svelte`
+- **Alternatives considered**: Inlining validation directly inside `entry-form.svelte`
   (rejected — harder to unit test in isolation, and mixes UI wiring with business rules for
   no benefit).

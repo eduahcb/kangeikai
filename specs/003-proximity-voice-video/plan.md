@@ -93,7 +93,7 @@ apps/
 ├── server/                                   # Existing app from feature 002
 │   └── src/
 │       ├── http/
-│       │   └── livekitToken.ts               # POST /livekit-token — mints a scoped LiveKit
+│       │   └── livekit-token.ts               # POST /livekit-token — mints a scoped LiveKit
 │       │                                     # access token (see contracts/livekit-token-endpoint.md)
 │       └── index.ts                           # (modified) mounts the token route alongside
 │                                              # the existing Colyseus HTTP server
@@ -102,13 +102,13 @@ apps/
     └── src/
         └── lib/
             └── av/
-                ├── ProximityAudioController.ts  # Joins the LiveKit room using the minted
+                ├── proximity-audio-controller.ts  # Joins the LiveKit room using the minted
                 │                                 # token; each frame, computes and applies
                 │                                 # per-participant volume from avatar distance
-                ├── proximityVolume.ts            # Pure function: distance → volume (unit
+                ├── proximity-volume.ts            # Pure function: distance → volume (unit
                 │                                 # tested, see contracts/proximity-volume-function.md)
-                ├── MediaControls.ts               # Own mic mute/unmute, camera on/off
-                └── AvatarVideoOverlay.svelte      # HTML <video> tiles positioned over nearby
+                ├── media-controls.ts               # Own mic mute/unmute, camera on/off
+                └── avatar-video-overlay.svelte      # HTML <video> tiles positioned over nearby
                                                     # avatars' screen-space position each frame
 
     tests/

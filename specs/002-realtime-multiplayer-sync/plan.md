@@ -83,11 +83,11 @@ apps/
 │   ├── src/
 │   │   └── lib/
 │   │       ├── network/
-│   │       │   └── RoomConnection.ts        # Connects to the Colyseus server, sends local
+│   │       │   └── room-connection.ts        # Connects to the Colyseus server, sends local
 │   │       │                                 # AvatarState, exposes remote-state events
 │   │       └── game/
 │   │           └── scenes/
-│   │               └── OfficeScene.ts       # (modified) spawns/updates/removes remote
+│   │               └── office-scene.ts       # (modified) spawns/updates/removes remote
 │   │                                         # Avatar entities from RoomConnection events
 │   └── tests/
 │       └── unit/
@@ -96,10 +96,10 @@ apps/
 └── server/                                  # New: Colyseus server app
     ├── src/
     │   ├── rooms/
-    │   │   ├── OfficeRoom.ts                # Room: onJoin/onLeave/onMessage, reconnection
+    │   │   ├── office-room.ts                # Room: onJoin/onLeave/onMessage, reconnection
     │   │   │                                 # grace period (FR-008/FR-009)
     │   │   └── schema/
-    │   │       └── AvatarSchema.ts          # Colyseus Schema mirroring shared AvatarState
+    │   │       └── avatar-schema.ts          # Colyseus Schema mirroring shared AvatarState
     │   └── index.ts                         # Server entrypoint: colyseus.js app + HTTP server
     └── tests/
         └── integration/

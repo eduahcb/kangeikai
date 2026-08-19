@@ -34,7 +34,7 @@ pnpm workspace root and `apps/client`).
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [ ] T005 Define `AvatarSchema` (Colyseus `Schema` mirroring `AvatarState` from
-      `packages/shared/src/avatar.ts`) in `apps/server/src/rooms/schema/AvatarSchema.ts`
+      `packages/shared/src/avatar.ts`) in `apps/server/src/rooms/schema/avatar-schema.ts`
       (depends on T002)
 - [ ] T006 Define `OfficeRoomState` (`players: MapSchema<AvatarSchema>`) in
       `apps/server/src/rooms/schema/OfficeRoomState.ts` (depends on T005)
@@ -42,7 +42,7 @@ pnpm workspace root and `apps/client`).
       `office` room — in `apps/server/src/index.ts` (depends on T006)
 - [ ] T008 Implement a `RoomConnection` skeleton (connects to the `office` room with
       `OfficeJoinOptions`, exposes connection-state events) in
-      `apps/client/src/lib/network/RoomConnection.ts` (depends on T003)
+      `apps/client/src/lib/network/room-connection.ts` (depends on T003)
 
 **Checkpoint**: Server boots and accepts a client join with no state sync logic yet.
 
@@ -66,15 +66,15 @@ near real time (spec.md SC-001).
 
 - [ ] T010 [US1] Implement `OfficeRoom.onJoin`: seed a `ParticipantSession`/`avatarState` from
       `OfficeJoinOptions.spriteType` plus a valid spawn position, in
-      `apps/server/src/rooms/OfficeRoom.ts` (depends on T006, T007)
+      `apps/server/src/rooms/office-room.ts` (depends on T006, T007)
 - [ ] T011 [US1] Implement `OfficeRoom`'s `updateState` message handler: write
       `x`/`y`/`direction`/`motionState` into the sender's own schema entry, per
       `contracts/office-room-protocol.md` (depends on T010)
 - [ ] T012 [US1] Implement `RoomConnection.sendState` (throttled on-change, capped ~20/sec) in
-      `apps/client/src/lib/network/RoomConnection.ts` (depends on T008)
+      `apps/client/src/lib/network/room-connection.ts` (depends on T008)
 - [ ] T013 [US1] Wire `RoomConnection`'s remote-state-change events into `OfficeScene` to
       spawn/update remote `Avatar` entities, in
-      `apps/client/src/lib/game/scenes/OfficeScene.ts` (depends on T012; reuses feature 001's
+      `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T012; reuses feature 001's
       `Avatar` entity)
 
 **Checkpoint**: User Story 1 fully functional and independently testable.
@@ -97,9 +97,9 @@ appearance; disconnect it and confirm disappearance (spec.md SC-002).
 ### Implementation for User Story 2
 
 - [ ] T015 [US2] Implement `OfficeRoom.onLeave`'s clean-leave path: remove the session from
-      `players` in `apps/server/src/rooms/OfficeRoom.ts` (depends on T010)
+      `players` in `apps/server/src/rooms/office-room.ts` (depends on T010)
 - [ ] T016 [US2] Handle remote-avatar removal in `OfficeScene` when a player leaves the synced
-      state, in `apps/client/src/lib/game/scenes/OfficeScene.ts` (depends on T013)
+      state, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T013)
 
 **Checkpoint**: User Stories 1 and 2 both work independently — full presence awareness.
 
@@ -124,12 +124,12 @@ resumes without a manual reload and other participants see no permanent gap (spe
 
 - [ ] T018 [US3] Implement `OfficeRoom.onLeave`'s ungraceful-disconnect path: call Colyseus's
       `allowReconnection` with a bounded grace period, excluding the session from `players`
-      during the window (FR-005, FR-008), in `apps/server/src/rooms/OfficeRoom.ts` (depends
+      during the window (FR-005, FR-008), in `apps/server/src/rooms/office-room.ts` (depends
       on T015)
 - [ ] T019 [US3] Implement grace-period-timeout finalization: treat an unresolved grace period
-      as a full leave (FR-009), in `apps/server/src/rooms/OfficeRoom.ts` (depends on T018)
+      as a full leave (FR-009), in `apps/server/src/rooms/office-room.ts` (depends on T018)
 - [ ] T020 [US3] Implement client-side automatic reconnection attempt on connection drop in
-      `apps/client/src/lib/network/RoomConnection.ts` (depends on T012)
+      `apps/client/src/lib/network/room-connection.ts` (depends on T012)
 
 **Checkpoint**: All three user stories independently functional.
 
@@ -139,7 +139,7 @@ resumes without a manual reload and other participants see no permanent gap (spe
 
 - [ ] T021 Run `quickstart.md` validation scenarios end-to-end manually with two browser
       windows, including the abrupt-disconnect and server-restart edge cases
-- [ ] T022 [P] Review `apps/server/src/rooms/OfficeRoom.ts` against `data-model.md` validation
+- [ ] T022 [P] Review `apps/server/src/rooms/office-room.ts` against `data-model.md` validation
       rules (`players` excludes grace-period sessions; `spriteType` immutable post-join)
 
 ---

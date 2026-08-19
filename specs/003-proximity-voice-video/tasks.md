@@ -32,16 +32,16 @@ server; dependencies installed; env var contract documented.
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [ ] T005 Implement the `POST /livekit-token` endpoint per
-      `contracts/livekit-token-endpoint.md` in `apps/server/src/http/livekitToken.ts`
+      `contracts/livekit-token-endpoint.md` in `apps/server/src/http/livekit-token.ts`
       (depends on T002, T003)
 - [ ] T006 Mount the token route on the existing HTTP server in `apps/server/src/index.ts`
       (depends on T005)
 - [ ] T007 [P] Implement the `proximityVolume` pure function per
-      `contracts/proximity-volume-function.md` in `apps/client/src/lib/av/proximityVolume.ts`
+      `contracts/proximity-volume-function.md` in `apps/client/src/lib/av/proximity-volume.ts`
       (depends on T001)
 - [ ] T008 Implement a `ProximityAudioController` skeleton — fetches a token from
       `/livekit-token` and connects to the single shared LiveKit room — in
-      `apps/client/src/lib/av/ProximityAudioController.ts` (depends on T001, T006)
+      `apps/client/src/lib/av/proximity-audio-controller.ts` (depends on T001, T006)
 
 **Checkpoint**: Client can obtain a token and connect to the local LiveKit room (T004); no
 volume logic yet.
@@ -66,12 +66,12 @@ audio ramps in; walk apart → confirm it ramps out (spec.md SC-001, SC-002).
 
 - [ ] T010 [US1] Compute per-remote-participant distance each frame by matching LiveKit
       participant `identity` to the corresponding synced `AvatarState` position (feature 002),
-      in `ProximityAudioController.ts` (depends on T008)
+      in `proximity-audio-controller.ts` (depends on T008)
 - [ ] T011 [US1] Apply `proximityVolume(distance, hearingRangePx)` to each remote
-      participant's LiveKit audio track each frame, in `ProximityAudioController.ts` (depends
+      participant's LiveKit audio track each frame, in `proximity-audio-controller.ts` (depends
       on T010, T007)
 - [ ] T012 [US1] Skip establishing the local participant's proximity connection until their
-      own avatar has a valid synced position (FR-008), in `ProximityAudioController.ts`
+      own avatar has a valid synced position (FR-008), in `proximity-audio-controller.ts`
       (depends on T008)
 
 **Checkpoint**: User Story 1 fully functional and independently testable.
@@ -90,12 +90,12 @@ plus sees the indicator (spec.md acceptance scenarios for Story 2).
 ### Implementation for User Story 2
 
 - [ ] T013 [US2] Implement `MediaControls` (own mic mute/unmute, camera on/off) in
-      `apps/client/src/lib/av/MediaControls.ts` (depends on T008)
-- [ ] T014 [US2] Implement `AvatarVideoOverlay.svelte`: render `<video>` tiles positioned at
+      `apps/client/src/lib/av/media-controls.ts` (depends on T008)
+- [ ] T014 [US2] Implement `avatar-video-overlay.svelte`: render `<video>` tiles positioned at
       each nearby avatar's current screen-space coordinates for participants with camera
       enabled (depends on T008; reads screen position from feature 001's camera/scene)
 - [ ] T015 [US2] Render a muted indicator on nearby avatars, driven by LiveKit's
-      `isMicrophoneEnabled` per participant (FR-006), in `AvatarVideoOverlay.svelte` or a
+      `isMicrophoneEnabled` per participant (FR-006), in `avatar-video-overlay.svelte` or a
       sibling component (depends on T008)
 - [ ] T016 [US2] Wire `MediaControls`' mute/camera-toggle UI into the page in
       `apps/client/src/routes/+page.svelte` (depends on T013)
@@ -116,9 +116,9 @@ others still fully works (spec.md SC-003).
 
 - [ ] T017 [US3] Handle `getUserMedia`/LiveKit-publish failure (permission denied or no
       device) without blocking the room connection itself, in
-      `ProximityAudioController.ts` (depends on T008)
+      `proximity-audio-controller.ts` (depends on T008)
 - [ ] T018 [US3] Make `MediaControls` reflect a "no device / denied" state by disabling the
-      relevant toggle rather than erroring, in `MediaControls.ts` (depends on T013, T017)
+      relevant toggle rather than erroring, in `media-controls.ts` (depends on T013, T017)
 
 **Checkpoint**: All three user stories independently functional.
 
@@ -129,7 +129,7 @@ others still fully works (spec.md SC-003).
 - [ ] T019 Run `quickstart.md` validation scenarios end-to-end manually with two real
       devices/browsers, including the multi-participant and independence-from-movement-sync
       edge cases
-- [ ] T020 [P] Review `ProximityAudioController.ts` against constitution Principle II —
+- [ ] T020 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
       confirm no per-distance track subscribe/unsubscribe logic was introduced (only volume
       changes)
 

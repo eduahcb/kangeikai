@@ -56,5 +56,5 @@ session's removal (FR-009), which is indistinguishable to other clients from a c
 ## Stability
 
 Changing `UpdateStatePayload` or the join options requires updating both `apps/client`'s
-`RoomConnection.ts` and `apps/server`'s `OfficeRoom.ts` together — this is the feature's core
+`room-connection.ts` and `apps/server`'s `office-room.ts` together — this is the feature's core
 cross-process contract.

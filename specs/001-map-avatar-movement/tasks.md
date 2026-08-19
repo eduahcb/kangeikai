@@ -33,7 +33,10 @@ on and are expected to already comply with.
       for Claude Code compatibility (depends on T007)
 - [ ] T009 Configure ESLint at the repository root using `@antfu/eslint-config`
       (`eslint.config.js`) — no Prettier, per constitution Principle V (depends on T002, so
-      the config can detect the Svelte/TypeScript project it's linting)
+      the config can detect the Svelte/TypeScript project it's linting). Also enable
+      `unicorn/filename-case` set to `kebabCase` for source files, with an `ignores` override
+      for SvelteKit's reserved route filenames (`+page.svelte`, `+layout.ts`, `+server.ts`,
+      etc.), which are framework-mandated and not subject to the convention
 - [ ] T010 Configure `lint-staged` at the repository root (`.lintstagedrc.json`) to run
       `eslint --fix` on staged files (depends on T009)
 - [ ] T011 Configure a `simple-git-hooks`-managed `pre-commit` hook that runs `lint-staged`,
@@ -88,14 +91,14 @@ keyboard movement works and is blocked by every obstacle on the map (spec.md SC-
 
 - [ ] T018 [US1] Implement `MovementController` (keyboard input → movement intent, opposing-
       key resolution, focus-loss handling) in
-      `apps/client/src/lib/game/input/MovementController.ts` (depends on T015)
+      `apps/client/src/lib/game/input/movement-controller.ts` (depends on T015)
 - [ ] T019 [US1] Implement the `Avatar` entity (position, applies movement intent, exposes
-      `AvatarState`) in `apps/client/src/lib/game/entities/Avatar.ts` (depends on T012, T015)
+      `AvatarState`) in `apps/client/src/lib/game/entities/avatar.ts` (depends on T012, T015)
 - [ ] T020 [US1] Implement `OfficeScene`: load the Tiled map + collision layer, spawn the
       local `Avatar` at a valid position in
-      `apps/client/src/lib/game/scenes/OfficeScene.ts` (depends on T013, T019)
+      `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T013, T019)
 - [ ] T021 [US1] Wire collision between the `Avatar` and the map's collision layer in
-      `OfficeScene.ts` so obstacles block movement (FR-004) (depends on T020)
+      `office-scene.ts` so obstacles block movement (FR-004) (depends on T020)
 - [ ] T022 [US1] Wire `MovementController` into `OfficeScene`'s update loop so keyboard input
       drives the `Avatar` (depends on T018, T020)
 
@@ -116,7 +119,7 @@ direction and animates; stop and confirm it returns to idle (spec.md Acceptance 
 ### Implementation for User Story 2
 
 - [ ] T023 [P] [US2] Define walk/idle animation frames for each of the four directions on the
-      `Avatar` entity in `apps/client/src/lib/game/entities/Avatar.ts` (depends on T014, T019)
+      `Avatar` entity in `apps/client/src/lib/game/entities/avatar.ts` (depends on T014, T019)
 - [ ] T024 [US2] Update `Avatar.direction`/`motionState` from `MovementController` input each
       frame and drive animation playback accordingly (FR-005) (depends on T018, T023)
 
@@ -136,9 +139,9 @@ avatar stays visible (spec.md Acceptance Scenarios for Story 3, SC-004).
 ### Implementation for User Story 3
 
 - [ ] T025 [US3] Configure the Phaser camera's bounds to the map's pixel dimensions and call
-      `startFollow(avatar)` in `OfficeScene.ts` (FR-006) (depends on T020)
+      `startFollow(avatar)` in `office-scene.ts` (FR-006) (depends on T020)
 - [ ] T026 [US3] Handle browser window resize to recompute the viewport/camera size in
-      `OfficeScene.ts` (Edge Case: resize near a map edge) (depends on T025)
+      `office-scene.ts` (Edge Case: resize near a map edge) (depends on T025)
 
 **Checkpoint**: All three user stories independently functional.
 

@@ -24,6 +24,6 @@ other participant should sound to the local listener right now.
 
 Not a data structure this feature defines — it is read directly from LiveKit's own
 `Participant` object (`isMicrophoneEnabled`, `isCameraEnabled`) for both the local participant
-(to drive `MediaControls.ts`'s UI) and remote participants (to drive the muted indicator, FR-006,
+(to drive `media-controls.ts`'s UI) and remote participants (to drive the muted indicator, FR-006,
 and whether a video tile is shown, FR-005). Modeling this locally would duplicate state LiveKit
 already owns and risk drift (see research.md).

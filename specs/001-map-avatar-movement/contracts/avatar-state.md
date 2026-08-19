@@ -19,7 +19,7 @@ export interface AvatarState {
 }
 ```
 
-**Producer (this feature)**: `apps/client/src/lib/game/entities/Avatar.ts` computes and owns
+**Producer (this feature)**: `apps/client/src/lib/game/entities/avatar.ts` computes and owns
 this state for the local player each frame, driven by `MovementController`.
 
 **Consumers**:

@@ -97,11 +97,11 @@ apps/
     │   └── lib/
     │       ├── game/
     │       │   ├── scenes/
-    │       │   │   └── OfficeScene.ts       # Loads map + tileset, spawns local Avatar
+    │       │   │   └── office-scene.ts       # Loads map + tileset, spawns local Avatar
     │       │   ├── entities/
-    │       │   │   └── Avatar.ts            # Sprite, animation state machine (idle/walk × 4 dir)
+    │       │   │   └── avatar.ts            # Sprite, animation state machine (idle/walk × 4 dir)
     │       │   └── input/
-    │       │       └── MovementController.ts  # Keyboard → movement intent, focus-loss handling
+    │       │       └── movement-controller.ts  # Keyboard → movement intent, focus-loss handling
     │       └── assets/
     │           ├── maps/
     │           │   ├── office.json          # Tiled map export (walkable area + obstacle layer)

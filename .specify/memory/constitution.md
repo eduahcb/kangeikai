@@ -1,5 +1,14 @@
 <!--
 Sync Impact Report
+- Version change: 1.3.0 → 1.4.0
+- Modified principles: V. Fixed Technology Stack (clarified ESLint config is a single
+  root-level file covering the whole workspace, not per-package; added kebab-case file
+  naming enforced via unicorn/filename-case, with a SvelteKit route-file exemption)
+- Added sections: none
+- Removed sections: none
+- Follow-up TODOs: none
+
+Sync Impact Report (1.3.0, superseded above)
 - Version change: 1.2.0 → 1.3.0
 - Modified principles: V. Fixed Technology Stack (added repo-wide tooling: ESLint via
   @antfu/eslint-config with no Prettier, lint-staged + simple-git-hooks pre-commit hook,
@@ -88,8 +97,12 @@ Reintroducing SSR for a specific future route (e.g. a public marketing page) req
 explicit amendment to this principle, not an ad-hoc per-route change.
 
 Repository-wide tooling is also fixed: ESLint using `@antfu/eslint-config` is the sole
-linter/formatter — Prettier is explicitly NOT used, since the antfu config's stylistic rules
-already cover formatting through ESLint. Staged files are linted at commit time via
+linter/formatter, configured once as a single root-level `eslint.config.js` covering the
+whole pnpm workspace (`apps/*`, `packages/*`) — not one config per package. Prettier is
+explicitly NOT used, since the antfu config's stylistic rules already cover formatting
+through ESLint. Source file names MUST be kebab-case, enforced via `unicorn/filename-case`
+in that same config, with an explicit exemption for SvelteKit's framework-reserved route
+filenames (`+page.svelte`, `+layout.ts`, etc.). Staged files are linted at commit time via
 `lint-staged`, wired to a `simple-git-hooks`-managed `pre-commit` git hook. AI coding-agent
 instructions live in a single root `AGENTS.md` (the tool-agnostic convention, appropriate for
 an open-source project other contributors may work on with tools other than Claude Code);
@@ -169,4 +182,4 @@ Compliance review: before starting a new subsystem spec, verify its scope and te
 approach against this constitution; deviations must be justified in that spec's
 Complexity Tracking section or trigger a constitution amendment first.
 
-**Version**: 1.3.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-18
+**Version**: 1.4.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-18

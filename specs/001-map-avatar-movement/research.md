@@ -83,6 +83,40 @@ instructions; `CLAUDE.md` is a thin file that imports it
   open-source/external-contributor goal); maintaining separate near-duplicate files per tool
   (rejected — guaranteed drift over time as one gets updated and others don't).
 
+## Decision: Enforce kebab-case file names via `unicorn/filename-case`, configured inside the
+same `@antfu/eslint-config` root config; exempt SvelteKit's reserved route filenames
+
+- **Rationale**: `@antfu/eslint-config` already composes `eslint-plugin-unicorn`, so enabling
+  `unicorn/filename-case` (`{ case: 'kebabCase' }`) as a rule override in the same
+  `eslint.config.js` is a few lines, not a new tool — consistent with the project's "one
+  config file" tooling philosophy. It applies repo-wide (client, server, shared package)
+  since the config is root-level (see the separate decision on repo-wide ESLint below).
+  SvelteKit requires exact reserved filenames for its routing convention (`+page.svelte`,
+  `+layout.ts`, `+layout.svelte`, `+server.ts`, `+error.svelte`, etc.) — these aren't a
+  developer's naming choice, so the rule's `ignores` must exclude `src/routes/**/+*` or the
+  lint would permanently conflict with the framework itself.
+- **Alternatives considered**: Enforcing naming via code review/convention only, no lint rule
+  (rejected — exactly the kind of easy-to-drift consistency rule a linter should own instead
+  of relying on humans to catch in review, especially with external OSS contributors);
+  PascalCase for component/class files (a common alternative convention, e.g. `Avatar.ts`,
+  `EntryForm.svelte`) — rejected per explicit project decision in favor of kebab-case
+  uniformly across all source files, regardless of what they export.
+
+## Decision: A single root-level ESLint config (`eslint.config.js`) covers the whole pnpm
+workspace, not one config per package
+
+- **Rationale**: ESLint's flat config format (which `@antfu/eslint-config` uses) is
+  glob-based and designed to span multiple directories from one root file — `apps/client`,
+  `apps/server`, and `packages/shared` are linted by the same config, with per-directory
+  behavior (if ever needed) expressed as `ignores`/overrides inside that one file rather than
+  as separate `eslint.config.js` files per package. This avoids N copies of the same config
+  drifting independently as the monorepo grows, and gives external contributors exactly one
+  place to look for lint rules regardless of which package they're touching.
+- **Alternatives considered**: A per-package `eslint.config.js` in each of `apps/client`,
+  `apps/server`, `packages/shared` (rejected — duplicates configuration for no behavioral
+  benefit here, since all packages share the same TypeScript/lint conventions; would only be
+  justified if packages needed genuinely different rule sets, which none currently do).
+
 ## Decision: Camera-follow via Phaser's built-in camera bounds + follow API, clamped to map
 size
 
