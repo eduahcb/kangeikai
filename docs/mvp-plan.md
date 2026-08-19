@@ -34,6 +34,8 @@ Caso de uso primário: **virtual office** (presença assíncrona de time/comunid
 | Engine de jogo | Phaser.js | Renderização do mapa e avatares |
 | Formato de mapa | Tiled | |
 | Multiplayer / realtime | Colyseus | Estado da sala em memória |
+| Estilização | CSS vanilla | `<style>` escopado nativo do SvelteKit — sem framework CSS/utility-classes |
+| Validação/schema | Valibot | Única lib de validação — formulário, parse de dado guardado no localStorage, payloads de rede |
 | Áudio / vídeo | LiveKit (self-hosted) | Proximidade via volume ajustado no client, todos numa mesma room |
 | Banco de dados | — (nenhum no MVP) | Reavaliar quando surgir a primeira feature que exija persistência real |
 | Monorepo | pnpm workspaces | Sem Turborepo por enquanto — build ainda não é lento o suficiente para justificar cache |

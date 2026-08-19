@@ -22,6 +22,8 @@ pnpm workspace root and `apps/client`).
 - [ ] T003 [P] Add the Colyseus client SDK dependency (`colyseus.js`) to
       `apps/client/package.json`
 - [ ] T004 [P] Add `@colyseus/testing` as a dev dependency to `apps/server/package.json`
+- [ ] T005 [P] Add the `valibot` dependency to `apps/server/package.json` (network-message
+      validation, per constitution Principle V)
 
 **Checkpoint**: `pnpm install` succeeds; `apps/server` has a runnable (empty) entrypoint.
 
@@ -33,14 +35,18 @@ pnpm workspace root and `apps/client`).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Define `AvatarSchema` (Colyseus `Schema` mirroring `AvatarState` from
+- [ ] T006 Define `AvatarSchema` (Colyseus `Schema` mirroring `AvatarState` from
       `packages/shared/src/avatar.ts`) in `apps/server/src/rooms/schema/avatar-schema.ts`
       (depends on T002)
-- [ ] T006 Define `OfficeRoomState` (`players: MapSchema<AvatarSchema>`) in
-      `apps/server/src/rooms/schema/OfficeRoomState.ts` (depends on T005)
-- [ ] T007 Implement the server entrypoint — Colyseus app + HTTP server registering the
-      `office` room — in `apps/server/src/index.ts` (depends on T006)
-- [ ] T008 Implement a `RoomConnection` skeleton (connects to the `office` room with
+- [ ] T007 Define `OfficeRoomState` (`players: MapSchema<AvatarSchema>`) in
+      `apps/server/src/rooms/schema/office-room-state.ts` (depends on T006)
+- [ ] T008 [P] Define `officeJoinOptionsSchema` and `updateStatePayloadSchema` (Valibot
+      validation schemas for the two client→server message shapes in
+      `contracts/office-room-protocol.md`) in `apps/server/src/rooms/message-schemas.ts`
+      (depends on T005)
+- [ ] T009 Implement the server entrypoint — Colyseus app + HTTP server registering the
+      `office` room — in `apps/server/src/index.ts` (depends on T007)
+- [ ] T010 Implement a `RoomConnection` skeleton (connects to the `office` room with
       `OfficeJoinOptions`, exposes connection-state events) in
       `apps/client/src/lib/network/room-connection.ts` (depends on T003)
 
@@ -58,23 +64,25 @@ near real time (spec.md SC-001).
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Integration test: two simulated clients join and position/direction/
+- [ ] T011 [P] [US1] Integration test: two simulated clients join and position/direction/
       motion-state changes propagate between them, in
-      `apps/server/tests/integration/office-room.spec.ts` (depends on T007)
+      `apps/server/tests/integration/office-room.spec.ts` (depends on T009)
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `OfficeRoom.onJoin`: seed a `ParticipantSession`/`avatarState` from
-      `OfficeJoinOptions.spriteType` plus a valid spawn position, in
-      `apps/server/src/rooms/office-room.ts` (depends on T006, T007)
-- [ ] T011 [US1] Implement `OfficeRoom`'s `updateState` message handler: write
-      `x`/`y`/`direction`/`motionState` into the sender's own schema entry, per
-      `contracts/office-room-protocol.md` (depends on T010)
-- [ ] T012 [US1] Implement `RoomConnection.sendState` (throttled on-change, capped ~20/sec) in
-      `apps/client/src/lib/network/room-connection.ts` (depends on T008)
-- [ ] T013 [US1] Wire `RoomConnection`'s remote-state-change events into `OfficeScene` to
+- [ ] T012 [US1] Implement `OfficeRoom.onJoin`: validate `options` with
+      `officeJoinOptionsSchema`, then seed a `ParticipantSession`/`avatarState` from
+      `spriteType` plus a valid spawn position, in `apps/server/src/rooms/office-room.ts`
+      (depends on T007, T008, T009)
+- [ ] T013 [US1] Implement `OfficeRoom`'s `updateState` message handler: validate the payload
+      with `updateStatePayloadSchema` (drop on failure), then write `x`/`y`/`direction`/
+      `motionState` into the sender's own schema entry, per
+      `contracts/office-room-protocol.md` (depends on T012, T008)
+- [ ] T014 [US1] Implement `RoomConnection.sendState` (throttled on-change, capped ~20/sec) in
+      `apps/client/src/lib/network/room-connection.ts` (depends on T010)
+- [ ] T015 [US1] Wire `RoomConnection`'s remote-state-change events into `OfficeScene` to
       spawn/update remote `Avatar` entities, in
-      `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T012; reuses feature 001's
+      `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T014; reuses feature 001's
       `Avatar` entity)
 
 **Checkpoint**: User Story 1 fully functional and independently testable.
@@ -90,16 +98,16 @@ appearance; disconnect it and confirm disappearance (spec.md SC-002).
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] Integration test: joining broadcasts a new avatar to already-connected
+- [ ] T016 [P] [US2] Integration test: joining broadcasts a new avatar to already-connected
       clients, and a clean leave removes it, in
-      `apps/server/tests/integration/office-room.spec.ts` (depends on T010)
+      `apps/server/tests/integration/office-room.spec.ts` (depends on T012)
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Implement `OfficeRoom.onLeave`'s clean-leave path: remove the session from
-      `players` in `apps/server/src/rooms/office-room.ts` (depends on T010)
-- [ ] T016 [US2] Handle remote-avatar removal in `OfficeScene` when a player leaves the synced
-      state, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T013)
+- [ ] T017 [US2] Implement `OfficeRoom.onLeave`'s clean-leave path: remove the session from
+      `players` in `apps/server/src/rooms/office-room.ts` (depends on T012)
+- [ ] T018 [US2] Handle remote-avatar removal in `OfficeScene` when a player leaves the synced
+      state, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T015)
 
 **Checkpoint**: User Stories 1 and 2 both work independently — full presence awareness.
 
@@ -116,20 +124,20 @@ resumes without a manual reload and other participants see no permanent gap (spe
 
 ### Tests for User Story 3
 
-- [ ] T017 [P] [US3] Integration test: an ungraceful disconnect enters the grace period (session
+- [ ] T019 [P] [US3] Integration test: an ungraceful disconnect enters the grace period (session
       excluded from `players`), and reconnecting within the window resumes the same session,
-      in `apps/server/tests/integration/office-room.spec.ts` (depends on T015)
+      in `apps/server/tests/integration/office-room.spec.ts` (depends on T017)
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Implement `OfficeRoom.onLeave`'s ungraceful-disconnect path: call Colyseus's
+- [ ] T020 [US3] Implement `OfficeRoom.onLeave`'s ungraceful-disconnect path: call Colyseus's
       `allowReconnection` with a bounded grace period, excluding the session from `players`
       during the window (FR-005, FR-008), in `apps/server/src/rooms/office-room.ts` (depends
-      on T015)
-- [ ] T019 [US3] Implement grace-period-timeout finalization: treat an unresolved grace period
-      as a full leave (FR-009), in `apps/server/src/rooms/office-room.ts` (depends on T018)
-- [ ] T020 [US3] Implement client-side automatic reconnection attempt on connection drop in
-      `apps/client/src/lib/network/room-connection.ts` (depends on T012)
+      on T017)
+- [ ] T021 [US3] Implement grace-period-timeout finalization: treat an unresolved grace period
+      as a full leave (FR-009), in `apps/server/src/rooms/office-room.ts` (depends on T020)
+- [ ] T022 [US3] Implement client-side automatic reconnection attempt on connection drop in
+      `apps/client/src/lib/network/room-connection.ts` (depends on T014)
 
 **Checkpoint**: All three user stories independently functional.
 
@@ -137,10 +145,11 @@ resumes without a manual reload and other participants see no permanent gap (spe
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T021 Run `quickstart.md` validation scenarios end-to-end manually with two browser
+- [ ] T023 Run `quickstart.md` validation scenarios end-to-end manually with two browser
       windows, including the abrupt-disconnect and server-restart edge cases
-- [ ] T022 [P] Review `apps/server/src/rooms/office-room.ts` against `data-model.md` validation
-      rules (`players` excludes grace-period sessions; `spriteType` immutable post-join)
+- [ ] T024 [P] Review `apps/server/src/rooms/office-room.ts` against `data-model.md` validation
+      rules (`players` excludes grace-period sessions; `spriteType` immutable post-join) and
+      confirm both message handlers actually go through `message-schemas.ts`
 
 ---
 
@@ -148,23 +157,25 @@ resumes without a manual reload and other participants see no permanent gap (spe
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies — start immediately (parallel to nothing since it's
-  first, but T001–T004 run in parallel with each other).
+- **Setup (Phase 1)**: No dependencies — start immediately (T001–T005 run in parallel with
+  each other).
 - **Foundational (Phase 2)**: Depends on Setup — blocks all user stories.
 - **User Stories (Phase 3–5)**: All depend on Foundational completion.
   - US1 (P1) has no dependency on US2/US3.
-  - US2 (P2) depends on US1's `OfficeRoom.onJoin`/session model (T010) but is independently
+  - US2 (P2) depends on US1's `OfficeRoom.onJoin`/session model (T012) but is independently
     testable.
-  - US3 (P3) depends on US2's clean-leave path (T015) existing to extend into the ungraceful
+  - US3 (P3) depends on US2's clean-leave path (T017) existing to extend into the ungraceful
     path, but is independently testable.
 - **Polish (Phase 6)**: Depends on all desired user stories being complete.
 
 ### Parallel Opportunities
 
-- T001–T004 (Setup) run in parallel.
-- T009 (US1 test) can be scaffolded in parallel with T010–T012 (implementation), written
+- T001–T005 (Setup) run in parallel.
+- T008 (Valibot schemas) can be built in parallel with T006–T007 (Colyseus Schema) — they're
+  unrelated concerns despite both living under `rooms/`.
+- T011 (US1 test) can be scaffolded in parallel with T012–T014 (implementation), written
   first per standard TDD ordering.
-- T014, T017 similarly can be drafted ahead of their implementation tasks.
+- T016, T019 similarly can be drafted ahead of their implementation tasks.
 
 ## Parallel Example: Setup
 
@@ -173,6 +184,7 @@ Task: "Scaffold apps/server as a new pnpm workspace member"
 Task: "Add Colyseus server dependencies to apps/server/package.json"
 Task: "Add the Colyseus client SDK dependency to apps/client/package.json"
 Task: "Add @colyseus/testing as a dev dependency to apps/server/package.json"
+Task: "Add the valibot dependency to apps/server/package.json"
 ```
 
 ## Implementation Strategy
@@ -194,8 +206,8 @@ Task: "Add @colyseus/testing as a dev dependency to apps/server/package.json"
 
 ## Notes
 
-- Total tasks: 22 (T001–T022)
-- Per-story breakdown: Setup 4, Foundational 4, US1 5, US2 3, US3 4, Polish 2
+- Total tasks: 24 (T001–T024)
+- Per-story breakdown: Setup 5, Foundational 5, US1 5, US2 3, US3 4, Polish 2
 - Suggested MVP scope: Phase 3 (User Story 1) only, on top of feature 001
 - All tasks above follow the required `- [ ] [ID] [P?] [Story?] Description with file path`
   format

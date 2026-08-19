@@ -16,8 +16,9 @@ avatars driven by this sync layer instead of only the local one.
 
 **Language/Version**: TypeScript 5.x on Node.js 20+ (both server and client)
 
-**Primary Dependencies**: Colyseus (server-side room framework + client SDK), reusing
-`AvatarState` from `packages/shared`
+**Primary Dependencies**: Colyseus (server-side room framework + client SDK), Valibot
+(validating incoming join options and state-update messages, per constitution Principle V),
+reusing `AvatarState` from `packages/shared`
 
 **Storage**: N/A — Colyseus room state lives entirely in process memory (per constitution
 Principle IV); nothing survives a server restart
@@ -54,7 +55,8 @@ server-side collision re-validation in the MVP — see research.md)
 - **IV. No Database in the MVP** — PASS. Colyseus in-memory state only; explicit FR-007
   requires no persistence across restarts.
 - **V. Fixed Technology Stack** — PASS. Uses Colyseus exactly as fixed by the constitution;
-  no new stack element introduced.
+  incoming message validation uses Valibot, also fixed by the constitution — no stack element
+  beyond what's already named.
 - **VI. Open Source, Self-Hostable, Packaging Deferred** — N/A to this feature's logic; no
   packaging concerns here.
 
@@ -98,8 +100,13 @@ apps/
     │   ├── rooms/
     │   │   ├── office-room.ts                # Room: onJoin/onLeave/onMessage, reconnection
     │   │   │                                 # grace period (FR-008/FR-009)
+    │   │   ├── message-schemas.ts            # Valibot: officeJoinOptionsSchema,
+    │   │   │                                 # updateStatePayloadSchema (network-boundary
+    │   │   │                                 # validation, distinct from the Colyseus Schema
+    │   │   │                                 # state-sync class below)
     │   │   └── schema/
-    │   │       └── avatar-schema.ts          # Colyseus Schema mirroring shared AvatarState
+    │   │       ├── avatar-schema.ts          # Colyseus Schema mirroring shared AvatarState
+    │   │       └── office-room-state.ts      # Colyseus Schema: players (MapSchema<AvatarSchema>)
     │   └── index.ts                         # Server entrypoint: colyseus.js app + HTTP server
     └── tests/
         └── integration/

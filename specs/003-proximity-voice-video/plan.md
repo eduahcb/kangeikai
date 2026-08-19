@@ -19,7 +19,9 @@ needs it reachable via configuration.
 **Language/Version**: TypeScript 5.x on Node.js 20+ (server route) and browser (client)
 
 **Primary Dependencies**: `livekit-client` (browser SDK) in `apps/client`; `livekit-server-sdk`
-(token minting) in `apps/server`; reuses synced `AvatarState` positions from feature 002
+(token minting) and Valibot (request-body validation, per constitution Principle V) in
+`apps/server`; reuses synced `AvatarState` positions from feature 002. Styling (mute
+indicator, video tiles) is plain CSS in native scoped `<style>` blocks, no framework.
 
 **Storage**: N/A — token minting is stateless (signed JWTs); no server-side session store
 
@@ -57,8 +59,9 @@ this feature)
 - **III. No Backend-Persisted Identity** — PASS. LiveKit `identity` is scoped to the session
   (mirrors the Colyseus `sessionId`, see research.md); nothing is persisted server-side.
 - **IV. No Database in the MVP** — PASS. Token minting is stateless; no storage introduced.
-- **V. Fixed Technology Stack** — PASS. Uses LiveKit self-hosted exactly as fixed; no new
-  stack element.
+- **V. Fixed Technology Stack** — PASS. Uses LiveKit self-hosted exactly as fixed; request
+  validation uses Valibot and styling uses plain scoped CSS, both per the fixed stack — no
+  new stack element beyond what the constitution already names.
 - **VI. Open Source, Self-Hostable, Packaging Deferred** — Consistent: this feature only
   requires LiveKit connection details via configuration/env vars, it does not attempt to
   solve LiveKit's own self-hosted deployment (that's the known UDP/TURN risk already flagged
@@ -93,8 +96,9 @@ apps/
 ├── server/                                   # Existing app from feature 002
 │   └── src/
 │       ├── http/
-│       │   └── livekit-token.ts               # POST /livekit-token — mints a scoped LiveKit
-│       │                                     # access token (see contracts/livekit-token-endpoint.md)
+│       │   └── livekit-token.ts               # POST /livekit-token — validates the request
+│       │                                     # body with a Valibot schema, then mints a scoped
+│       │                                     # LiveKit access token (see contracts/livekit-token-endpoint.md)
 │       └── index.ts                           # (modified) mounts the token route alongside
 │                                              # the existing Colyseus HTTP server
 │

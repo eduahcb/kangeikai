@@ -21,6 +21,8 @@ automated tests of real WebRTC media).
 - [ ] T004 [P] Create `docker-compose.livekit.yml` at the repository root: a LiveKit dev
       server with fixed dev API key/secret and mapped ports (HTTP/WS + RTC TCP/UDP), per the
       constitution's local development environment requirement
+- [ ] T005 [P] Add the `valibot` dependency to `apps/server/package.json` (request-body
+      validation, per constitution Principle V)
 
 **Checkpoint**: `docker compose -f docker-compose.livekit.yml up` starts a local LiveKit
 server; dependencies installed; env var contract documented.
@@ -31,17 +33,18 @@ server; dependencies installed; env var contract documented.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Implement the `POST /livekit-token` endpoint per
-      `contracts/livekit-token-endpoint.md` in `apps/server/src/http/livekit-token.ts`
-      (depends on T002, T003)
-- [ ] T006 Mount the token route on the existing HTTP server in `apps/server/src/index.ts`
-      (depends on T005)
-- [ ] T007 [P] Implement the `proximityVolume` pure function per
+- [ ] T006 Implement the `POST /livekit-token` endpoint in
+      `apps/server/src/http/livekit-token.ts`: validate the request body with a Valibot
+      schema, then mint a token per `contracts/livekit-token-endpoint.md` (depends on T002,
+      T003, T005)
+- [ ] T007 Mount the token route on the existing HTTP server in `apps/server/src/index.ts`
+      (depends on T006)
+- [ ] T008 [P] Implement the `proximityVolume` pure function per
       `contracts/proximity-volume-function.md` in `apps/client/src/lib/av/proximity-volume.ts`
       (depends on T001)
-- [ ] T008 Implement a `ProximityAudioController` skeleton — fetches a token from
+- [ ] T009 Implement a `ProximityAudioController` skeleton — fetches a token from
       `/livekit-token` and connects to the single shared LiveKit room — in
-      `apps/client/src/lib/av/proximity-audio-controller.ts` (depends on T001, T006)
+      `apps/client/src/lib/av/proximity-audio-controller.ts` (depends on T001, T007)
 
 **Checkpoint**: Client can obtain a token and connect to the local LiveKit room (T004); no
 volume logic yet.
@@ -58,21 +61,21 @@ audio ramps in; walk apart → confirm it ramps out (spec.md SC-001, SC-002).
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Unit test `proximityVolume`: `1` at distance 0, `0` at/after the range
+- [ ] T010 [P] [US1] Unit test `proximityVolume`: `1` at distance 0, `0` at/after the range
       threshold, monotonically non-increasing in between, in
-      `apps/client/tests/unit/proximity-volume.spec.ts` (depends on T007)
+      `apps/client/tests/unit/proximity-volume.spec.ts` (depends on T008)
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Compute per-remote-participant distance each frame by matching LiveKit
+- [ ] T011 [US1] Compute per-remote-participant distance each frame by matching LiveKit
       participant `identity` to the corresponding synced `AvatarState` position (feature 002),
-      in `proximity-audio-controller.ts` (depends on T008)
-- [ ] T011 [US1] Apply `proximityVolume(distance, hearingRangePx)` to each remote
+      in `proximity-audio-controller.ts` (depends on T009)
+- [ ] T012 [US1] Apply `proximityVolume(distance, hearingRangePx)` to each remote
       participant's LiveKit audio track each frame, in `proximity-audio-controller.ts` (depends
-      on T010, T007)
-- [ ] T012 [US1] Skip establishing the local participant's proximity connection until their
+      on T011, T008)
+- [ ] T013 [US1] Skip establishing the local participant's proximity connection until their
       own avatar has a valid synced position (FR-008), in `proximity-audio-controller.ts`
-      (depends on T008)
+      (depends on T009)
 
 **Checkpoint**: User Story 1 fully functional and independently testable.
 
@@ -89,16 +92,17 @@ plus sees the indicator (spec.md acceptance scenarios for Story 2).
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Implement `MediaControls` (own mic mute/unmute, camera on/off) in
-      `apps/client/src/lib/av/media-controls.ts` (depends on T008)
-- [ ] T014 [US2] Implement `avatar-video-overlay.svelte`: render `<video>` tiles positioned at
+- [ ] T014 [US2] Implement `MediaControls` (own mic mute/unmute, camera on/off) in
+      `apps/client/src/lib/av/media-controls.ts` (depends on T009)
+- [ ] T015 [US2] Implement `avatar-video-overlay.svelte`: render `<video>` tiles positioned at
       each nearby avatar's current screen-space coordinates for participants with camera
-      enabled (depends on T008; reads screen position from feature 001's camera/scene)
-- [ ] T015 [US2] Render a muted indicator on nearby avatars, driven by LiveKit's
+      enabled, styled with a plain scoped `<style>` block (no CSS framework, per constitution
+      Principle V) (depends on T009; reads screen position from feature 001's camera/scene)
+- [ ] T016 [US2] Render a muted indicator on nearby avatars, driven by LiveKit's
       `isMicrophoneEnabled` per participant (FR-006), in `avatar-video-overlay.svelte` or a
-      sibling component (depends on T008)
-- [ ] T016 [US2] Wire `MediaControls`' mute/camera-toggle UI into the page in
-      `apps/client/src/routes/+page.svelte` (depends on T013)
+      sibling component (depends on T009)
+- [ ] T017 [US2] Wire `MediaControls`' mute/camera-toggle UI into the page in
+      `apps/client/src/routes/+page.svelte` (depends on T014)
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -114,11 +118,11 @@ others still fully works (spec.md SC-003).
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Handle `getUserMedia`/LiveKit-publish failure (permission denied or no
+- [ ] T018 [US3] Handle `getUserMedia`/LiveKit-publish failure (permission denied or no
       device) without blocking the room connection itself, in
-      `proximity-audio-controller.ts` (depends on T008)
-- [ ] T018 [US3] Make `MediaControls` reflect a "no device / denied" state by disabling the
-      relevant toggle rather than erroring, in `media-controls.ts` (depends on T013, T017)
+      `proximity-audio-controller.ts` (depends on T009)
+- [ ] T019 [US3] Make `MediaControls` reflect a "no device / denied" state by disabling the
+      relevant toggle rather than erroring, in `media-controls.ts` (depends on T014, T018)
 
 **Checkpoint**: All three user stories independently functional.
 
@@ -126,10 +130,10 @@ others still fully works (spec.md SC-003).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T019 Run `quickstart.md` validation scenarios end-to-end manually with two real
+- [ ] T020 Run `quickstart.md` validation scenarios end-to-end manually with two real
       devices/browsers, including the multi-participant and independence-from-movement-sync
       edge cases
-- [ ] T020 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
+- [ ] T021 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
       confirm no per-distance track subscribe/unsubscribe logic was introduced (only volume
       changes)
 
@@ -143,17 +147,17 @@ others still fully works (spec.md SC-003).
 - **Foundational (Phase 2)**: Depends on Setup — blocks all user stories.
 - **User Stories (Phase 3–5)**: All depend on Foundational completion.
   - US1 (P1) has no dependency on US2/US3.
-  - US2 (P2) depends on the LiveKit connection existing (T008) but is independently testable.
-  - US3 (P3) depends on the LiveKit connection existing (T008) but is independently testable
+  - US2 (P2) depends on the LiveKit connection existing (T009) but is independently testable.
+  - US3 (P3) depends on the LiveKit connection existing (T009) but is independently testable
     and can be developed in parallel with US2.
 - **Polish (Phase 6)**: Depends on all desired user stories being complete.
 
 ### Parallel Opportunities
 
-- T001–T004 (Setup) run in parallel.
-- T007 (pure function) can be built in parallel with T005–T006 (server endpoint).
+- T001–T005 (Setup) run in parallel.
+- T008 (pure function) can be built in parallel with T006–T007 (server endpoint).
 - US2 and US3 can be worked on in parallel once Foundational + US1 are done, since both only
-  depend on T008/T013, not on each other.
+  depend on T009/T014, not on each other.
 
 ## Parallel Example: Setup
 
@@ -162,6 +166,7 @@ Task: "Add the livekit-client dependency to apps/client/package.json"
 Task: "Add the livekit-server-sdk dependency to apps/server/package.json"
 Task: "Document required LiveKit environment variables in apps/server/.env.example"
 Task: "Create docker-compose.livekit.yml at the repository root"
+Task: "Add the valibot dependency to apps/server/package.json"
 ```
 
 ## Implementation Strategy
@@ -183,8 +188,8 @@ Task: "Create docker-compose.livekit.yml at the repository root"
 
 ## Notes
 
-- Total tasks: 20 (T001–T020)
-- Per-story breakdown: Setup 4, Foundational 4, US1 4, US2 4, US3 2, Polish 2
+- Total tasks: 21 (T001–T021)
+- Per-story breakdown: Setup 5, Foundational 4, US1 4, US2 4, US3 2, Polish 2
 - Suggested MVP scope: Phase 3 (User Story 1) only, on top of features 001–002
 - All tasks above follow the required `- [ ] [ID] [P?] [Story?] Description with file path`
   format

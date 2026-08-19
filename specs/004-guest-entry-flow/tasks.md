@@ -6,7 +6,7 @@
 contracts/guest-profile-handoff.md, quickstart.md. Also depends on
 `packages/shared/src/avatar.ts` (`AvatarSpriteType`) from feature 001.
 
-**Tests**: Included for all pure logic (validation, default-name, storage wrapper), per
+**Tests**: Included for all pure logic (schema, default-name, storage wrapper), per
 research.md.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -15,8 +15,9 @@ research.md.
 
 - [ ] T001 Define entry-flow constants (`MAX_NAME_LENGTH`, the `localStorage` key, the
       default-name wordlists) in `apps/client/src/lib/entry/constants.ts`
+- [ ] T002 [P] Add the `valibot` dependency to `apps/client/package.json`
 
-**Checkpoint**: Constants available for the rest of the feature.
+**Checkpoint**: Constants and Valibot available for the rest of the feature.
 
 ---
 
@@ -24,14 +25,15 @@ research.md.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] Implement `isValidName`, `clampName`, `isValidAvatarType`,
-      `fallbackAvatarType` pure functions in `apps/client/src/lib/entry/validation.ts`
-      (depends on T001)
-- [ ] T003 [P] Implement `generateDefaultName()` pure function in
+- [ ] T003 [P] Implement `displayNameSchema`, `avatarTypeSchema` (strict Valibot field
+      schemas), and `guestProfileSchema` (lenient, with per-field `v.fallback()` — see
+      research.md) in `apps/client/src/lib/entry/guest-profile-schema.ts` (depends on T001,
+      T002)
+- [ ] T004 [P] Implement `generateDefaultName()` pure function in
       `apps/client/src/lib/entry/default-name.ts` (depends on T001)
-- [ ] T004 Implement `GuestProfileStore` (`load()`/`save()`, wrapping `localStorage` in
-      `try/catch`, using `validation.ts`) in
-      `apps/client/src/lib/entry/guest-profile-store.ts` (depends on T002, T003)
+- [ ] T005 Implement `GuestProfileStore` (`load()`/`save()`, wrapping `localStorage` in
+      `try/catch`, parsing loaded data via `guestProfileSchema`) in
+      `apps/client/src/lib/entry/guest-profile-store.ts` (depends on T003, T004)
 
 **Checkpoint**: Storage/validation layer ready; no UI yet.
 
@@ -47,19 +49,20 @@ and verify entry succeeds with that identity (spec.md SC-001, SC-003).
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Unit test `isValidName`/`clampName`: rejects empty/whitespace-only,
-      enforces `MAX_NAME_LENGTH` (FR-002, FR-003), in
-      `apps/client/tests/unit/entry-validation.spec.ts` (depends on T002)
+- [ ] T006 [P] [US1] Unit test `displayNameSchema`/`avatarTypeSchema`: rejects empty/
+      whitespace-only, enforces `MAX_NAME_LENGTH` (FR-002, FR-003), in
+      `apps/client/tests/unit/guest-profile-schema.spec.ts` (depends on T003)
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Implement `entry-form.svelte`: name input, avatar-type picker, confirm
-      button, blocking submission on an invalid name (FR-002), in
-      `apps/client/src/lib/entry/entry-form.svelte` (depends on T004)
-- [ ] T007 [US1] Wire `+page.svelte` to render `EntryForm` before mounting the game scene,
+- [ ] T007 [US1] Implement `entry-form.svelte`: name input, avatar-type picker, confirm
+      button, blocking submission on an invalid name via `displayNameSchema`/`avatarTypeSchema`
+      (FR-002), plain scoped `<style>` (no CSS framework, per constitution Principle V), in
+      `apps/client/src/lib/entry/entry-form.svelte` (depends on T005)
+- [ ] T008 [US1] Wire `+page.svelte` to render `EntryForm` before mounting the game scene,
       passing the confirmed `displayName`/`avatarType` down per
       `contracts/guest-profile-handoff.md` (FR-009), in `apps/client/src/routes/+page.svelte`
-      (depends on T006; integrates with feature 001's existing `+page.svelte`)
+      (depends on T007; integrates with feature 001's existing `+page.svelte`)
 
 **Checkpoint**: User Story 1 fully functional and independently testable.
 
@@ -75,15 +78,15 @@ with the same choice (spec.md SC-002).
 
 ### Tests for User Story 2
 
-- [ ] T008 [P] [US2] Unit test `GuestProfileStore.save()`/`load()` round-trip via a mocked
-      `localStorage`, in `apps/client/tests/unit/guest-profile-store.spec.ts` (depends on T004)
+- [ ] T009 [P] [US2] Unit test `GuestProfileStore.save()`/`load()` round-trip via a mocked
+      `localStorage`, in `apps/client/tests/unit/guest-profile-store.spec.ts` (depends on T005)
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Pre-fill `EntryForm` from `GuestProfileStore.load()` on mount (depends on
-      T004, T006)
-- [ ] T010 [US2] Call `GuestProfileStore.save()` on successful confirm, replacing any prior
-      stored profile (depends on T004, T007)
+- [ ] T010 [US2] Pre-fill `EntryForm` from `GuestProfileStore.load()` on mount (depends on
+      T005, T007)
+- [ ] T011 [US2] Call `GuestProfileStore.save()` on successful confirm, replacing any prior
+      stored profile (depends on T005, T008)
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -98,13 +101,13 @@ not empty (spec.md Acceptance Scenario for Story 3).
 
 ### Tests for User Story 3
 
-- [ ] T011 [P] [US3] Unit test `generateDefaultName()` always returns a non-blank string, in
-      `apps/client/tests/unit/entry-validation.spec.ts` (depends on T003)
+- [ ] T012 [P] [US3] Unit test `generateDefaultName()` always returns a non-blank string, in
+      `apps/client/tests/unit/default-name.spec.ts` (depends on T004)
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Use `generateDefaultName()` to pre-fill `EntryForm`'s name field when
-      `GuestProfileStore.load()` returns no stored profile (depends on T003, T009)
+- [ ] T013 [US3] Use `generateDefaultName()` to pre-fill `EntryForm`'s name field when
+      `GuestProfileStore.load()` returns no stored profile (depends on T004, T010)
 
 **Checkpoint**: All three user stories independently functional.
 
@@ -112,13 +115,14 @@ not empty (spec.md Acceptance Scenario for Story 3).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T013 [P] Unit test `GuestProfileStore` falls back to "no stored profile" behavior when
+- [ ] T014 [P] Unit test `GuestProfileStore` falls back to "no stored profile" behavior when
       `localStorage.getItem`/`setItem` throws or is absent (FR-007), in
       `apps/client/tests/unit/guest-profile-store.spec.ts`
-- [ ] T014 [P] Unit test `GuestProfileStore` falls back to a valid `avatarType` when the
-      stored value is missing or invalid (FR-008), in
+- [ ] T015 [P] Unit test `GuestProfileStore` falls back to a valid `avatarType` while
+      preserving an otherwise-valid stored `displayName` (FR-008, exercising
+      `guestProfileSchema`'s per-field `v.fallback()`), in
       `apps/client/tests/unit/guest-profile-store.spec.ts`
-- [ ] T015 Run `quickstart.md` validation scenarios end-to-end manually, including the
+- [ ] T016 Run `quickstart.md` validation scenarios end-to-end manually, including the
       corrupted-storage and storage-unavailable edge cases
 
 ---
@@ -131,22 +135,22 @@ not empty (spec.md Acceptance Scenario for Story 3).
 - **Foundational (Phase 2)**: Depends on Setup — blocks all user stories.
 - **User Stories (Phase 3–5)**: All depend on Foundational completion.
   - US1 (P1) has no dependency on US2/US3.
-  - US2 (P2) depends on US1's `EntryForm`/`+page.svelte` wiring (T006, T007) existing, but is
+  - US2 (P2) depends on US1's `EntryForm`/`+page.svelte` wiring (T007, T008) existing, but is
     independently testable.
-  - US3 (P3) depends on US2's pre-fill wiring (T009) existing (to know when there's "nothing
+  - US3 (P3) depends on US2's pre-fill wiring (T010) existing (to know when there's "nothing
     to pre-fill from"), but is independently testable.
 - **Polish (Phase 6)**: Depends on all desired user stories being complete.
 
 ### Parallel Opportunities
 
-- T002 and T003 (Foundational) run in parallel.
-- T005 (US1 test) can be drafted in parallel with T006–T007 (implementation).
-- T013 and T014 (Polish) run in parallel with each other.
+- T003 and T004 (Foundational) run in parallel.
+- T006 (US1 test) can be drafted in parallel with T007–T008 (implementation).
+- T014 and T015 (Polish) run in parallel with each other.
 
 ## Parallel Example: Foundational
 
 ```bash
-Task: "Implement isValidName, clampName, isValidAvatarType, fallbackAvatarType in apps/client/src/lib/entry/validation.ts"
+Task: "Implement displayNameSchema, avatarTypeSchema, guestProfileSchema in apps/client/src/lib/entry/guest-profile-schema.ts"
 Task: "Implement generateDefaultName() in apps/client/src/lib/entry/default-name.ts"
 ```
 
@@ -170,8 +174,8 @@ Task: "Implement generateDefaultName() in apps/client/src/lib/entry/default-name
 
 ## Notes
 
-- Total tasks: 15 (T001–T015)
-- Per-story breakdown: Setup 1, Foundational 3, US1 3, US2 3, US3 2, Polish 3
+- Total tasks: 16 (T001–T016)
+- Per-story breakdown: Setup 2, Foundational 3, US1 3, US2 3, US3 2, Polish 3
 - Suggested MVP scope: Phase 3 (User Story 1) only, on top of features 001–003
 - All tasks above follow the required `- [ ] [ID] [P?] [Story?] Description with file path`
   format

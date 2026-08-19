@@ -26,22 +26,50 @@ same as "no stored profile"
 ## Decision: Store the `GuestProfile` as a single JSON blob under one `localStorage` key,
 not as separate keys per field
 
-- **Rationale**: One read and one write keeps persistence atomic and simple, and makes
-  fallback trivial — if the blob is missing, malformed JSON, or has an invalid shape (e.g. a
-  corrupted `avatarType`), the whole thing is treated as "no stored profile" (satisfying
-  FR-008) rather than needing per-field recovery logic.
-- **Alternatives considered**: Separate keys per field (rejected — more storage calls, and a
-  partially-corrupted state — e.g. valid name but invalid avatar type — becomes possible and
-  has to be handled anyway; a single blob with whole-shape validation avoids that case
-  entirely).
+- **Rationale**: One read and one write keeps persistence atomic and simple. Per-field
+  recovery (keep a valid `displayName` even if `avatarType` is corrupted, per FR-008) is
+  still possible with a single blob — it's handled by the Valibot schema's per-field
+  `fallback()` behavior (see the next decision), not by splitting storage into multiple keys.
+- **Alternatives considered**: Separate keys per field (rejected — more storage calls for no
+  benefit once per-field fallback is handled at the schema level instead).
 
-## Decision: Implement name/avatar-type validation and default-name generation as pure
-functions, independent of the `EntryForm` component
+## Decision: Validate and parse `GuestProfile` with a Valibot schema, using per-field
+`v.fallback()` for stored-data loading and the same field schemas (without fallback) for
+form-submission validation
 
-- **Rationale**: `isValidName`, `clampName`, `isValidAvatarType`, `fallbackAvatarType`, and
-  `generateDefaultName` are all deterministic given their inputs and don't need a DOM or
-  Svelte runtime to test — exactly the kind of logic worth unit-testing directly, keeping the
-  Svelte component itself thin (just wiring, not business rules).
-- **Alternatives considered**: Inlining validation directly inside `entry-form.svelte`
-  (rejected — harder to unit test in isolation, and mixes UI wiring with business rules for
-  no benefit).
+- **Rationale**: Per constitution Principle V, Valibot is the project's one validation/schema
+  library. A single `guestProfileSchema` built from two field-level schemas
+  (`displayNameSchema`, `avatarTypeSchema`) serves both contexts this feature needs, which
+  have different strictness requirements:
+  - **Loading a stored profile** (`GuestProfileStore.load()`) must be lenient — a corrupted
+    `avatarType` shouldn't discard an otherwise-valid stored `displayName` (FR-008 asks for
+    exactly this: fall back the invalid field, keep the rest). Wrapping each field with
+    `v.fallback(schema, defaultValue)` gives that per-field recovery for free, while a
+    structurally invalid blob (not even an object, e.g. `null` or an array) still fails
+    `v.safeParse()` entirely and is treated as "no stored profile" (Story 3's default-name
+    path) — there's nothing per-field to fall back to.
+  - **Form submission** (`entry-form.svelte`'s confirm handler) must be strict — an empty
+    name actively blocks entry (FR-002), it doesn't silently become a generated default. This
+    reuses `displayNameSchema`/`avatarTypeSchema` directly (no `fallback()` wrapper), so a
+    `v.safeParse()` failure surfaces as a validation error the form displays.
+  This also resolves an internal tension in an earlier draft of this feature (whole-blob
+  "any invalid field discards the whole profile" vs. FR-008's literal per-field fallback
+  requirement) — Valibot's `fallback()` primitive is a direct fit for what FR-008 actually
+  asks for.
+- **Alternatives considered**: Hand-rolled pure validation functions per field (rejected —
+  reinvents what Valibot already does, and the project has already fixed Valibot as its one
+  validation library rather than picking ad hoc per feature); one schema without per-field
+  fallback, treating any invalid field as "discard the whole stored profile" (rejected —
+  doesn't satisfy FR-008's explicit per-field fallback wording).
+
+## Decision: Keep `generateDefaultName()` as a plain function, independent of the schema
+
+- **Rationale**: Generating a friendly default name (Story 3) is unrelated to validation — it
+  produces a value, it doesn't check one. It's used in two places: as the `v.fallback()`
+  default for `displayName` when loading a corrupted/absent stored profile, and directly by
+  `entry-form.svelte` to pre-fill the name field when `GuestProfileStore.load()` returns
+  nothing at all. Keeping it a small, dependency-free pure function (per the earlier wordlist
+  decision above) keeps it trivially unit-testable on its own.
+- **Alternatives considered**: Folding default-name generation into the Valibot schema itself
+  (rejected — conflates "what's a valid value" with "what's a good default value to suggest,"
+  which are different concerns with different reasons to change).

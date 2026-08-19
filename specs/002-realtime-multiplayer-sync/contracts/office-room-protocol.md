@@ -14,6 +14,10 @@ interface OfficeJoinOptions {
 }
 ```
 
+The server validates `options` against a Valibot schema (`officeJoinOptionsSchema` in
+`message-schemas.ts`) before trusting it — join options are untrusted client input over a
+network boundary, per constitution Principle V. A validation failure rejects the join.
+
 The server assigns a `sessionId` and adds a `ParticipantSession` to `OfficeRoomState.players`,
 seeding `avatarState` with the given `spriteType` and a valid spawn position (feature 001's
 `MapDefinition` invariant: spawn must be outside the collision layer).
@@ -40,10 +44,14 @@ interface UpdateStatePayload {
 }
 ```
 
-The server writes this directly into the sender's own `ParticipantSession.avatarState` fields
-(`spriteType` is immutable post-join and never included here) and lets Colyseus's Schema sync
-propagate it. The server does not re-validate collision against the map (see research.md
-"client-authoritative" decision).
+The server validates this payload against a Valibot schema (`updateStatePayloadSchema` in
+`message-schemas.ts` — `x`/`y` numeric, `direction`/`motionState` restricted to their known
+values) before using it; a failure is dropped rather than applied. Validated fields are
+written directly into the sender's own `ParticipantSession.avatarState` fields (`spriteType`
+is immutable post-join and never included here) and Colyseus's Schema sync propagates them.
+Validation here is a shape/type check only — the server does not re-validate collision
+against the map (see research.md "client-authoritative" decision); a well-formed but
+physically-impossible position is still accepted, out of scope for the MVP.
 
 ## Reconnection
 

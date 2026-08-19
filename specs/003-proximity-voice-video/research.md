@@ -1,5 +1,18 @@
 # Phase 0 Research: Proximity Voice & Video
 
+## Decision: Validate the `/livekit-token` request body with a Valibot schema before minting
+a token
+
+- **Rationale**: The request body is untrusted input crossing a real system boundary (HTTP,
+  from the client) — exactly where the constitution's validation policy (Principle V, Valibot
+  as the one validation library) applies. A small `v.object({ identity: v.string(...),
+  name: v.string(...) })` schema rejects malformed requests before any LiveKit SDK call is
+  made, rather than letting bad input reach token-minting logic.
+- **Alternatives considered**: No validation, trusting the client-sent shape (rejected — this
+  is precisely a system boundary, the one place this codebase's general "trust internal
+  code" stance doesn't apply); hand-rolled `if` checks (rejected — the project has already
+  fixed Valibot as its one validation library rather than picking ad hoc per endpoint).
+
 ## Decision: Use LiveKit's native per-track mute/enabled state as the source of truth for
 FR-004/FR-006, instead of re-broadcasting a redundant flag through Colyseus
 

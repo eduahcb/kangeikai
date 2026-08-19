@@ -1,5 +1,22 @@
 # Phase 0 Research: Realtime Multiplayer Sync
 
+## Decision: Validate both `OfficeJoinOptions` and `UpdateStatePayload` with Valibot schemas
+server-side, in a dedicated `message-schemas.ts`
+
+- **Rationale**: Both cross the client→server network boundary — untrusted input, per
+  constitution Principle V (Valibot as the one validation library). This is a shape/type
+  check only (right types, `direction`/`motionState`/`spriteType` restricted to their known
+  values): it does not re-validate movement physics or collision, which the separate
+  "client-authoritative position" decision below deliberately leaves server-unchecked. A
+  dedicated `message-schemas.ts` file (distinct from `schema/avatar-schema.ts`, which is the
+  unrelated Colyseus `Schema` *state-sync* class) keeps "is this message well-formed" and "how
+  is room state synced" as clearly separate concerns that happen to both be called "schema."
+- **Alternatives considered**: No validation, trusting Colyseus's TypeScript types alone
+  (rejected — TypeScript types are compile-time only and provide zero runtime protection
+  against a malformed or malicious message from a real network client); folding validation
+  directly into `office-room.ts`'s handlers with hand-rolled checks (rejected — the project has
+  already fixed Valibot as its one validation library rather than picking ad hoc per handler).
+
 ## Decision: Client-authoritative position; server relays and broadcasts without re-validating
 collision
 

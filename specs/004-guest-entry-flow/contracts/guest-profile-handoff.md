@@ -4,6 +4,8 @@ Not a network contract — this documents what `004-guest-entry-flow` hands to t
 application on successful entry confirmation (FR-009), and who consumes it.
 
 ```ts
+// Inferred from the Valibot schema in guest-profile-schema.ts (v.InferOutput<typeof guestProfileSchema>),
+// not hand-written — see data-model.md and research.md for validation rules.
 interface GuestProfile {
   displayName: string;   // validated: non-empty, trimmed, ≤ MAX_NAME_LENGTH
   avatarType: "man" | "woman"; // AvatarSpriteType from packages/shared/src/avatar.ts

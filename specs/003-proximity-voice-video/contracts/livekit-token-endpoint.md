@@ -24,6 +24,10 @@ interface LiveKitTokenResponse {
 ```
 
 **Server behavior**:
+- Validates the request body against a Valibot schema (`identity` and `name` both required,
+  non-empty strings) before doing anything else — this is a system boundary (untrusted input
+  from the client over HTTP), per constitution Principle V. A validation failure returns an
+  error response and never reaches the token-minting step.
 - Uses `livekit-server-sdk` to mint a token granting join access to exactly one, fixed,
   well-known room name (the single shared space — no room selection).
 - Reads LiveKit connection/signing configuration (`LIVEKIT_URL`, `LIVEKIT_API_KEY`,

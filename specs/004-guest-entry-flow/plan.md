@@ -16,15 +16,16 @@ app (features 001–003). Entirely client-only — no server involvement.
 
 **Language/Version**: TypeScript 5.x on browser (SvelteKit component/route code)
 
-**Primary Dependencies**: None beyond the existing SvelteKit app — `localStorage` is a
-built-in browser API; a default display name is generated from a small inline wordlist, not a
-new dependency
+**Primary Dependencies**: Valibot (validation/schema, per constitution Principle V) —
+otherwise nothing beyond the existing SvelteKit app: `localStorage` is a built-in browser API,
+and the default display name is generated from a small inline wordlist, not a dependency.
+Styling is plain CSS in `entry-form.svelte`'s native scoped `<style>` block, no CSS framework.
 
 **Storage**: Browser `localStorage`, scoped to the browser — this is the one MVP feature that
 legitimately uses client-side storage (explicitly distinct from the constitution's "no
 database" rule, which is about server-side persistence)
 
-**Testing**: Vitest unit tests for the pure validation/default-name logic and for the
+**Testing**: Vitest unit tests for the Valibot schemas, the pure default-name logic, and the
 `GuestProfileStore` wrapper against a mocked (including throwing/absent) `localStorage`
 
 **Target Platform**: Browser only — no server involvement in this feature at all
@@ -52,8 +53,9 @@ rather than breaking entry (FR-007)
 - **IV. No Database in the MVP** — PASS. No server-side storage is introduced; `localStorage`
   is explicitly the browser-local exception the constitution and `docs/mvp-plan.md` already
   carve out.
-- **V. Fixed Technology Stack** — PASS. Uses only the existing SvelteKit app; no new
-  dependency added.
+- **V. Fixed Technology Stack** — PASS. Uses the existing SvelteKit app plus Valibot, which
+  the constitution fixes as the project's one validation/schema library; styling is plain
+  scoped CSS, no framework.
 - **VI. Open Source, Self-Hostable, Packaging Deferred** — N/A to this feature.
 
 No violations. Complexity Tracking not required.
@@ -82,12 +84,16 @@ apps/
         ├── lib/
         │   └── entry/
         │       ├── constants.ts               # MAX_NAME_LENGTH, storage key, wordlists
-        │       ├── validation.ts               # isValidName, clampName, isValidAvatarType,
-        │       │                               # fallbackAvatarType (pure functions)
+        │       ├── guest-profile-schema.ts     # Valibot: displayNameSchema, avatarTypeSchema
+        │       │                               # (strict), guestProfileSchema (lenient, with
+        │       │                               # per-field v.fallback() — see research.md)
         │       ├── default-name.ts              # generateDefaultName() (pure function)
         │       ├── guest-profile-store.ts        # load()/save() wrapping localStorage,
-        │       │                               # try/catch fallback (FR-007), uses validation.ts
-        │       └── entry-form.svelte            # Name input + avatar picker + confirm button
+        │       │                               # try/catch fallback (FR-007), parses via
+        │       │                               # guestProfileSchema (lenient)
+        │       └── entry-form.svelte            # Name input + avatar picker + confirm button;
+        │                                        # validates via displayNameSchema/avatarTypeSchema
+        │                                        # (strict) on submit; plain scoped <style>
         └── routes/
             └── +page.svelte                    # (modified) renders EntryForm first; on
                                                   # confirm, mounts the game (features 001–003)
@@ -95,14 +101,16 @@ apps/
 
     tests/
         └── unit/
-            ├── entry-validation.spec.ts        # validation.ts + default-name.ts
+            ├── guest-profile-schema.spec.ts    # guest-profile-schema.ts
+            ├── default-name.spec.ts            # default-name.ts
             └── guest-profile-store.spec.ts     # GuestProfileStore against mocked storage
 ```
 
 **Structure Decision**: Purely additive to the existing `apps/client` app from feature 001; no
 new package, no server involvement. Reuses `AvatarSpriteType` from
 `packages/shared/src/avatar.ts` (feature 001) for the avatar-type field so this feature never
-redefines that shape.
+redefines that shape. Validation is centralized in `guest-profile-schema.ts` (Valibot), reused
+by both the strict form-submission path and the lenient stored-data-loading path (research.md).
 
 ## Complexity Tracking
 

@@ -1,5 +1,14 @@
 <!--
 Sync Impact Report
+- Version change: 1.4.0 → 1.5.0
+- Modified principles: V. Fixed Technology Stack (added: plain CSS via Svelte's native
+  scoped <style> blocks, no CSS framework; Valibot as the sole validation/schema library
+  for any form input, stored-data parsing, or network payload validation)
+- Added sections: none
+- Removed sections: none
+- Follow-up TODOs: none
+
+Sync Impact Report (1.4.0, superseded above)
 - Version change: 1.3.0 → 1.4.0
 - Modified principles: V. Fixed Technology Stack (clarified ESLint config is a single
   root-level file covering the whole workspace, not per-package; added kebab-case file
@@ -96,6 +105,11 @@ it. No route uses SSR or prerendering in the MVP, since none currently benefits 
 Reintroducing SSR for a specific future route (e.g. a public marketing page) requires an
 explicit amendment to this principle, not an ad-hoc per-route change.
 
+Styling is plain CSS written inside Svelte components' native scoped `<style>` blocks — no
+CSS framework or utility-class library (e.g. Tailwind, UnoCSS) is introduced. Any data
+validation or schema need (form input, stored-data parsing, network message payloads) uses
+Valibot; no other schema/validation library (e.g. Zod, Yup) is introduced.
+
 Repository-wide tooling is also fixed: ESLint using `@antfu/eslint-config` is the sole
 linter/formatter, configured once as a single root-level `eslint.config.js` covering the
 whole pnpm workspace (`apps/*`, `packages/*`) — not one config per package. Prettier is
@@ -117,7 +131,11 @@ routes would be exactly that. A static build is also simpler to self-host. One l
 instead of a linter-plus-formatter pair, and a single universal agent-instructions file
 instead of one per tool, both reduce the number of things a new contributor has to learn
 before their first PR — directly serving this project's open-source, external-contribution
-goal.
+goal. Plain scoped CSS avoids a build-tool/utility-class layer the MVP's UI surface (an entry
+form and a handful of overlay controls) doesn't need. Valibot is small, tree-shakeable, and
+covers every validation need this project actually has (form input, parsing untrusted
+localStorage content, validating network message payloads) — one schema library, not one
+picked ad hoc per feature.
 
 ### VI. Open Source, Self-Hostable by Design, Packaging Deferred
 The project is licensed AGPL-3.0 specifically so that anyone running it as a public
@@ -182,4 +200,4 @@ Compliance review: before starting a new subsystem spec, verify its scope and te
 approach against this constitution; deviations must be justified in that spec's
 Complexity Tracking section or trigger a constitution amendment first.
 
-**Version**: 1.4.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-18
+**Version**: 1.5.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-18
