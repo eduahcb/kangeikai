@@ -11,14 +11,32 @@ other participant should sound to the local listener right now.
   participant `identity` (research.md decision) |
 | `distance` | number | Distance between the local and remote avatar, computed from
   `AvatarState.x`/`y` (feature 001/002) |
-| `volume` | number (0–1) | Output of `proximityVolume(distance)` — see
-  `contracts/proximity-volume-function.md` |
+| `sharedZone` | boolean | `true` when the local and remote avatar's `zoneId` (below) are equal
+  and non-null (FR-011) |
+| `volume` | number (0–1) | `1` when `sharedZone`; otherwise `proximityVolume(distance)` — see
+  `contracts/proximity-volume-function.md` (FR-011/FR-012) |
 
 **Validation rules**:
-- `volume` MUST be `0` for any `distance` at or beyond the hearing-range threshold (FR-003).
+- `volume` MUST be `1` whenever `sharedZone` is `true`, regardless of `distance` (FR-011).
+- `volume` MUST be `0` for any `distance` at or beyond the hearing-range threshold when
+  `sharedZone` is `false` (FR-003/FR-012).
 - Recomputed every local animation frame for every currently-connected remote participant;
   never written to any shared/synced state (feature 002's `OfficeRoomState` is untouched by
   this feature, per constitution FR-009's independence requirement).
+
+## ZoneMembership (read from feature 001)
+
+Not owned by this feature — read from feature 001's parsed `Zone` data (spec 001 FR-010) and
+each avatar's current position, both already available locally per participant.
+
+| Field | Type | Notes |
+|---|---|---|
+| `zoneId` | string \| null | The `name` (e.g. `desk-01`) of the zone the avatar's position
+  currently falls inside, or `null` if outside every zone. An avatar is assumed to occupy at
+  most one zone at a time (zones do not overlap, per map authoring). |
+
+Recomputed per avatar per frame from position + feature 001's zone boundary data; feeds
+`ProximityRelationship.sharedZone` above.
 
 ## Media State (externally owned)
 

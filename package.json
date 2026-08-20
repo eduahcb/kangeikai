@@ -1,0 +1,23 @@
+{
+  "name": "kangeikai",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@9.15.5",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter ./apps/client dev",
+    "build": "pnpm --filter ./apps/client build",
+    "lint": "eslint .",
+    "test": "pnpm --filter ./apps/client test"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.0.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-svelte": "^2.46.0",
+    "lint-staged": "^15.2.0",
+    "svelte-eslint-parser": "^0.43.0"
+  }
+}

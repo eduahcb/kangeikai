@@ -20,7 +20,10 @@ export function proximityVolume(
 
 **Callers**: `proximity-audio-controller.ts` calls this once per remote participant per local
 animation frame, using each remote participant's `ProximityRelationship.distance`
-(data-model.md), and applies the result as that participant's LiveKit audio track volume.
+(data-model.md), and applies the result as that participant's LiveKit audio track volume —
+**but only when `ProximityRelationship.sharedZone` is `false`**. When `sharedZone` is `true`
+(FR-011, data-model.md), the caller skips this function entirely and applies volume `1` directly
+— zone membership overrides the distance falloff rather than feeding into it.
 
 **Why a contract for an internal function**: this is the one piece of FR-002/FR-003/SC-002
 that is cheaply and meaningfully unit-testable (research.md) — pinning its input/output

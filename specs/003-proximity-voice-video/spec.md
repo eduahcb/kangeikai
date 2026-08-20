@@ -103,6 +103,13 @@ error blocking their use of the space.
 - What happens the instant someone joins, before their avatar's position is known yet? No
   proximity audio/video connection is established for a participant until their own avatar has
   a valid position.
+- What happens when two participants are in adjacent-but-different zones (e.g. `desk-01` and
+  `desk-02`), physically close to each other? They do NOT share zone membership, so FR-011 does
+  not apply — the distance-based model (FR-012) governs, same as if there were no zones there.
+- What happens when a participant moves from inside a zone to outside it (or vice versa) while
+  already connected to another participant? The connection MUST immediately re-evaluate under
+  the applicable rule (FR-011 while both share a zone, FR-012 the moment they no longer do) —
+  no stale "still full volume" state after leaving a shared zone.
 
 ## Requirements *(mandatory)*
 
@@ -129,6 +136,14 @@ error blocking their use of the space.
   presence sync from continuing to function, and vice versa.
 - **FR-010**: System MUST support multiple simultaneously-nearby participants, each
   contributing independently distance-weighted audio to the local listener at once.
+- **FR-011**: System MUST treat two participants as fully connected (perceived volume `1`, video
+  visible per Story 2) whenever their avatars share membership in the same zone (any
+  `personal-desk` or `public-space` tagged zone, per feature 001's FR-010), regardless of the
+  exact distance between them within that zone — shared zone membership overrides the
+  distance-based falloff (FR-002/FR-003) rather than combining with it.
+- **FR-012**: For any pair of participants that does NOT share zone membership (either or both
+  are outside any zone, or they are in two different zones), System MUST fall back to the
+  existing distance-based volume model (FR-002/FR-003) unchanged.
 
 ### Key Entities
 
@@ -136,6 +151,10 @@ error blocking their use of the space.
   other nearby participant, characterized by the distance between their avatars and the
   resulting perceived volume of that participant's audio for the local listener. Recomputed
   continuously as avatars move.
+- **Zone Membership**: Which single zone (if any) an avatar currently occupies, per feature
+  001's `Zone` entity. When both avatars in a pair share the same zone, it overrides
+  distance-based volume with full connection (FR-011); otherwise distance-based volume applies
+  unchanged (FR-012).
 - **Media State**: A participant's own microphone-enabled/camera-enabled/muted flags. Visible
   to nearby participants as indicators (e.g. FR-006's muted indicator) and as the presence or
   absence of a video feed.
@@ -154,14 +173,22 @@ error blocking their use of the space.
   continues to hear a participant who just muted.
 - **SC-005**: A participant can simultaneously perceive audio from several distinctly nearby
   participants, each at a volume appropriate to its own distance.
+- **SC-006**: Two participants anywhere within the same `personal-desk` or `public-space` zone
+  hear/see each other at full volume/video, regardless of exact distance apart within that zone.
+- **SC-007**: When one of two zone-mates leaves the shared zone (without the other), their
+  connection immediately switches to the distance-based model — no lingering full volume.
 
 ## Assumptions
 
 - All participants share a single audio/video room; proximity is simulated purely by
   client-side volume attenuation over that shared room (per project constitution) — there are
   no per-pair private connections and no server-side selective media routing in the MVP.
-- The single shared map (feature 001) has no isolated-audio "meeting room" zones in the MVP —
-  the entire floor is one open area for proximity purposes.
+- The single shared map (feature 001) defines named, tagged zones (`personal-desk`,
+  `public-space`) via its Tiled object layer. These zones do not create isolated-audio "meeting
+  room" acoustics or server-side media routing — the shared room and client-side volume
+  attenuation model from the point above still apply everywhere. Zone membership is an
+  additional signal layered on top of distance (see FR-011), not a replacement for it. No
+  private zones exist in the MVP.
 - The hearing-range distance threshold is a fixed value tuned during implementation/testing,
   not user-configurable in the MVP.
 - Camera/microphone hardware access and permission state are per-browser-session; there is no
