@@ -4,9 +4,10 @@
 
 - `apps/client` SvelteKit dev server runnable locally (`pnpm --filter client dev`, once the
   monorepo scaffold exists).
-- Map assets present at `apps/client/src/lib/assets/maps/office.json` +
-  `office-tileset.png`, and avatar sprites at
-  `apps/client/src/lib/assets/sprites/avatar-{man,woman}.png`.
+- Map assets present at `apps/client/src/lib/assets/maps/welcome/welcome.tmj` plus its four
+  embedded-tileset source images (`Room_Builder_32x32.png`, `Interiors_32x32.png`,
+  `Modern_Office_32x32.png`, `Room_Builder_Office_32x32.png`), and avatar sprites at
+  `apps/client/src/lib/assets/sprites/avatar-{man,woman}-{idle,walk}.png`.
 
 ## Validation Scenarios
 

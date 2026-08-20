@@ -106,11 +106,17 @@ apps/
     │       │       └── movement-controller.ts  # Keyboard → movement intent, focus-loss handling
     │       └── assets/
     │           ├── maps/
-    │           │   ├── office.json          # Tiled map export (walkable area + obstacle layer)
-    │           │   └── office-tileset.png
+    │           │   └── welcome/
+    │           │       ├── welcome.tmj              # Tiled map export (zones, ground, room groups)
+    │           │       ├── Room_Builder_32x32.png    # Embedded-tileset source images
+    │           │       ├── Interiors_32x32.png
+    │           │       ├── Modern_Office_32x32.png
+    │           │       └── Room_Builder_Office_32x32.png
     │           └── sprites/
-    │               ├── avatar-man.png
-    │               └── avatar-woman.png
+    │               ├── avatar-man-idle.png
+    │               ├── avatar-man-walk.png
+    │               ├── avatar-woman-idle.png
+    │               └── avatar-woman-walk.png
     └── tests/
         └── unit/
             └── movement-controller.spec.ts  # Vitest: input → movement intent, opposing-key
