@@ -1,0 +1,54 @@
+# AGENTS.md
+
+Instructions for AI coding agents working in this repository. This is the single source of
+truth for agent instructions — tool-specific files (e.g. `CLAUDE.md`) only import this one.
+
+## What this project is
+
+Kangeikai is an open source (AGPL-3.0), self-hostable "virtual office" in the style of
+Gather.town: a 2D shared map where people move avatars and get proximity-based voice/video
+chat. See `docs/mvp-plan.md` for the product plan and `.specify/memory/constitution.md` for
+the binding project constitution — **the constitution supersedes any ad-hoc decision made
+during implementation**; read it before making a scope or stack decision.
+
+## Stack (fixed — do not substitute without a constitution amendment)
+
+- **Monorepo**: pnpm workspaces (`apps/*`, `packages/*`), no Turborepo yet.
+- **Client** (`apps/client`): SvelteKit, running as a static SPA (`adapter-static`,
+  `ssr = false` globally in `src/routes/+layout.ts`) — no Node runtime needed to serve it.
+- **Rendering**: Phaser.js for the 2D map/avatar canvas.
+- **Map authoring**: Tiled, exported as JSON and loaded via Phaser's Tiled loader.
+- **Realtime sync**: Colyseus (in-memory room state, no database).
+- **Voice/video**: LiveKit, self-hosted.
+- **Styling**: plain CSS in Svelte's native scoped `<style>` blocks — no CSS framework.
+- **Validation**: Valibot — the only schema/validation library, for form input, `localStorage`
+  parsing, and network payloads.
+- **Lint/format**: ESLint via `@antfu/eslint-config`, one root-level `eslint.config.js` for the
+  whole workspace. No Prettier.
+- **Testing**: Vitest for pure/deterministic logic (e.g. movement/collision math); no automated
+  canvas-rendering assertions at MVP stage — validate rendered behavior manually via each
+  feature's `quickstart.md`.
+- **Git hooks**: a native git hook, no wrapper package. The tracked source of truth is
+  `.githooks/pre-commit` (runs `lint-staged`, which runs `eslint --fix` on staged files).
+  `.git/hooks/` isn't versioned by git, so **after cloning, run once**:
+  `cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
+  (documented as a deviation from constitution Principle V's originally-specified
+  `simple-git-hooks` in `specs/001-map-avatar-movement/plan.md`'s Complexity Tracking).
+
+## Conventions
+
+- Source file names are kebab-case (enforced by `unicorn/filename-case`), except SvelteKit's
+  reserved route filenames (`+page.svelte`, `+layout.ts`, `+server.ts`, etc.).
+- No user accounts or server-persisted identity — guests only, name/avatar choice lives in
+  `localStorage`.
+- No database — Colyseus room state is in-memory and resets on server restart.
+
+## Workflow
+
+Work is broken down with Spec Kit, one spec per subsystem under `specs/<NNN-feature-name>/`:
+`/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`. Tasks in each
+feature's `tasks.md` are grouped into phases (Setup → Foundational → per-user-story →
+Polish); implement a phase fully (including its checkpoint) before starting the next.
+
+Before adding anything not already covered by a feature's spec, check
+`.specify/memory/constitution.md` — Principle I locks the MVP scope explicitly.

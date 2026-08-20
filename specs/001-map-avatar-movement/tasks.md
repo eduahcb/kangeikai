@@ -16,31 +16,41 @@ chosen in research.md (Vitest, no automated rendering assertions at MVP stage).
 feature implemented, so it creates the shared scaffolding later features (002–004) will build
 on and are expected to already comply with.
 
-- [ ] T001 Initialize the pnpm workspace at the repository root (`package.json` with
+- [X] T001 Initialize the pnpm workspace at the repository root (`package.json` with
       `"packageManager": "pnpm@..."`, `pnpm-workspace.yaml` listing `apps/*` and `packages/*`)
-- [ ] T002 [P] Scaffold the `apps/client` SvelteKit app with TypeScript in `apps/client/`
-- [ ] T003 Configure `apps/client` for SPA mode: set `adapter-static` (with a SPA fallback
-      page) in `apps/client/svelte.config.js` and disable server-side rendering globally via
-      `export const ssr = false` in `apps/client/src/routes/+layout.ts` (depends on T002)
-- [ ] T004 [P] Scaffold the `packages/shared` package (`packages/shared/package.json`,
+- [X] T002 [P] Scaffold the `apps/client` SvelteKit app with TypeScript in `apps/client/`
+- [X] T003 Configure `apps/client` for SPA mode: set `adapter-static` (with a SPA fallback
+      page) and disable server-side rendering globally via `export const ssr = false` in
+      `apps/client/src/routes/+layout.ts` (depends on T002). Note: the installed SvelteKit
+      version configures the adapter inside `apps/client/vite.config.ts` (the `sveltekit()`
+      plugin's `adapter` option) rather than a separate `svelte.config.js` — no
+      `svelte.config.js` file exists in this toolchain version, so the adapter config lives in
+      `vite.config.ts` instead.
+- [X] T004 [P] Scaffold the `packages/shared` package (`packages/shared/package.json`,
       `packages/shared/tsconfig.json`, `packages/shared/src/index.ts`) and add it as a
       workspace dependency of `apps/client`
-- [ ] T005 [P] Add the Phaser.js dependency to `apps/client/package.json`
-- [ ] T006 [P] Configure Vitest for `apps/client` (`apps/client/vitest.config.ts`)
-- [ ] T007 [P] Create `AGENTS.md` at the repository root as the single source of truth for
+- [X] T005 [P] Add the Phaser.js dependency to `apps/client/package.json`
+- [X] T006 [P] Configure Vitest for `apps/client` (`apps/client/vitest.config.ts`)
+- [X] T007 [P] Create `AGENTS.md` at the repository root as the single source of truth for
       AI coding-agent instructions (universal, tool-agnostic, per constitution Principle V)
-- [ ] T008 Create `CLAUDE.md` at the repository root containing only an `@AGENTS.md` import,
+- [X] T008 Create `CLAUDE.md` at the repository root containing only an `@AGENTS.md` import,
       for Claude Code compatibility (depends on T007)
-- [ ] T009 Configure ESLint at the repository root using `@antfu/eslint-config`
+- [X] T009 Configure ESLint at the repository root using `@antfu/eslint-config`
       (`eslint.config.js`) — no Prettier, per constitution Principle V (depends on T002, so
       the config can detect the Svelte/TypeScript project it's linting). Also enable
       `unicorn/filename-case` set to `kebabCase` for source files, with an `ignores` override
       for SvelteKit's reserved route filenames (`+page.svelte`, `+layout.ts`, `+server.ts`,
-      etc.), which are framework-mandated and not subject to the convention
-- [ ] T010 Configure `lint-staged` at the repository root (`.lintstagedrc.json`) to run
+      etc.) and for convention-mandated uppercase filenames (`AGENTS.md`, `CLAUDE.md`,
+      `README*.md`), neither of which is subject to the convention
+- [X] T010 Configure `lint-staged` at the repository root (`.lintstagedrc.json`) to run
       `eslint --fix` on staged files (depends on T009)
-- [ ] T011 Configure a `simple-git-hooks`-managed `pre-commit` hook that runs `lint-staged`,
-      wired via the `"simple-git-hooks"` field in the root `package.json` (depends on T010)
+- [X] T011 Configure a `pre-commit` hook that runs `lint-staged` (depends on T010). Deviation
+      from the original task text: implemented as a hand-written native git hook
+      (`.githooks/pre-commit`, copied to `.git/hooks/pre-commit`) instead of via
+      `simple-git-hooks`, per explicit maintainer preference — documented as a Complexity
+      Tracking entry in `plan.md` (constitution Principle V names `simple-git-hooks`
+      specifically) and in `AGENTS.md` (each clone needs a one-time manual copy step, since
+      `.git/hooks/` isn't versioned by git).
 
 **Checkpoint**: `pnpm install` succeeds, `apps/client` boots an empty SvelteKit dev server in
 SPA mode, `pnpm build` produces a static output with no server-rendered HTML, `pnpm lint`
