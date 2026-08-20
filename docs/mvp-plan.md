@@ -13,15 +13,22 @@ Caso de uso primário: **virtual office** (presença assíncrona de time/comunid
 ## Escopo do MVP
 
 **Incluído:**
-- Avatar 2D com movimento livre num único mapa (Tiled), sala fixa única, open floor (sem zonas/salas de reunião).
-- Chat de voz/vídeo por proximidade: todos os participantes na mesma room do LiveKit; volume ajustado no client conforme distância entre avatares.
+- Avatar 2D com movimento livre num único mapa (Tiled), sala fixa única.
+- Zonas nomeadas e tagueadas dentro desse mapa único (object layer do Tiled), ex.: `desk-01`
+  (tag `personal-desk`), `public-space-01` (tag `public-space`) — sem zonas privadas por
+  enquanto. Usadas apenas como sinal de ativação de voz/vídeo (ver item abaixo), não criam
+  salas/rooms separadas.
+- Chat de voz/vídeo por proximidade: todos os participantes na mesma room do LiveKit; volume
+  ajustado no client conforme distância entre avatares — exceto quando os dois avatares estão
+  na mesma zona nomeada, caso em que o volume/vídeo fica cheio independente da distância exata
+  dentro da zona.
 - Entrada como convidado, sem contas/login. Nome e avatar escolhidos ficam salvos em `localStorage` do navegador (sem backend) — não persistem entre dispositivos/navegadores.
 - Estado de sala 100% em memória via Colyseus — reseta em restart do servidor.
 
 **Fora do MVP (backlog v2+):**
 - Contas de usuário / autenticação.
 - Persistência em banco de dados (Postgres).
-- Zonas/salas com áudio isolado dentro do mapa.
+- Zonas privadas / salas com áudio isolado (routing de mídia separado) dentro do mapa.
 - Empacotamento genérico para self-host de terceiros (Docker Compose documentado, guia de instalação).
 - Chat de texto.
 - Customização avançada de avatar.

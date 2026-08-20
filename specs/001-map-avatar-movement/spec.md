@@ -112,6 +112,9 @@ visible viewport scrolls to follow it, stopping appropriately at the map's outer
 - **FR-008**: System MUST resolve simultaneous opposing directional input into a single,
   consistent movement state rather than undefined/jittery behavior.
 - **FR-009**: System MUST stop avatar movement when the browser tab/window loses input focus.
+- **FR-010**: System MUST parse named, tagged zones (`personal-desk`, `public-space`) from the
+  map's Tiled object layer and expose them as data (name, tag, boundary) for other features to
+  consume — this feature does not itself use zones for anything beyond parsing/exposing them.
 
 ### Key Entities
 
@@ -120,6 +123,12 @@ visible viewport scrolls to follow it, stopping appropriately at the map's outer
 - **Map**: The single shared virtual office space. Defines the walkable area and the
   walls/obstacles that block movement, and is authored ahead of time as a fixed asset (no
   in-product map editor).
+- **Zone**: A named, tagged region of the map authored as a Tiled object-layer object (e.g.
+  `name: desk-01`, `tag: personal-desk`; `name: public-space-01`, `tag: public-space`). Zones
+  do not block movement — they mark areas whose membership (which avatars are currently inside)
+  is used by the proximity voice/video feature to determine conversation activation. No private
+  zones exist in the MVP; only `personal-desk` and `public-space` tagged zones are authored.
+  See feature 003 for how zone membership drives voice/video.
 
 ## Success Criteria *(mandatory)*
 

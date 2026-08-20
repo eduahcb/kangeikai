@@ -1,5 +1,28 @@
 <!--
 Sync Impact Report
+- Version change: 1.5.0 → 2.0.0
+- Modified principles:
+  - I. Locked MVP Scope — narrowed the "multiple rooms/zones" exclusion. Named, tagged
+    voice/video activation zones (`personal-desk`, `public-space`) authored within the single
+    fixed map via its object layer are now explicitly in-scope. Multiple *rooms* (additional
+    floors/maps, an in-product room switcher) and private/isolated-audio zones remain excluded.
+  - II. Simplest Proximity Architecture First — narrowed the blanket "spatial audio zones"
+    exclusion. Zone-based full-volume/video override (when two avatars share zone membership)
+    is now explicitly permitted, on the condition that it stays pure client-side
+    volume-attenuation logic (a zone-membership check picking full volume vs. the existing
+    distance falloff) with no dynamic peer-track subscribe/unsubscribe and no isolated-audio
+    acoustic rooms/server-side media routing — all participants remain in the one shared
+    LiveKit room regardless of zone.
+- Added sections: none
+- Removed sections: none
+- Follow-up TODOs: re-validate the Constitution Check section of
+  `specs/003-proximity-voice-video/plan.md` (and `specs/001-map-avatar-movement/plan.md`)
+  against this amended wording before/during their next `/speckit-plan` pass — their current
+  text still cites the pre-amendment "no zones" reasoning.
+- Backward-incompatible: this is a MAJOR bump per this file's own versioning policy
+  ("unlocking the MVP scope" is listed there as a MAJOR-bump example).
+
+Sync Impact Report (1.5.0, superseded above)
 - Version change: 1.4.0 → 1.5.0
 - Modified principles: V. Fixed Technology Stack (added: plain CSS via Svelte's native
   scoped <style> blocks, no CSS framework; Valibot as the sole validation/schema library
@@ -56,23 +79,38 @@ Sync Impact Report (1.0.0, superseded above)
 
 ### I. Locked MVP Scope
 The MVP delivers exactly: a 2D avatar that moves freely on a single fixed map, and
-proximity-based voice/video chat. No feature is added to the MVP that is not explicitly
-listed as in-scope in `docs/mvp-plan.md`. Explicitly excluded from the MVP: text chat,
-multiple rooms/zones, avatar appearance customization beyond two fixed sprites, user
-accounts, and persistent server-side storage.
+proximity-based voice/video chat — including named, tagged voice/video activation zones
+(`personal-desk`, `public-space`) authored within that single map via its Tiled object
+layer. No feature is added to the MVP that is not explicitly listed as in-scope in
+`docs/mvp-plan.md`. Explicitly excluded from the MVP: text chat, multiple rooms (additional
+floors/maps, an in-product room switcher), private/isolated-audio zones, avatar appearance
+customization beyond two fixed sprites, user accounts, and persistent server-side storage.
 **Rationale**: A single solo maintainer with no deadline is the highest risk of scope
 creep killing the project before it ships. A hard-locked scope is what makes "done" a
-reachable, checkable state.
+reachable, checkable state. Named zones within the one fixed map were unlocked because
+they directly serve the core proximity-chat value proposition (a shared desk or common
+area reliably activating conversation) without reopening the higher-cost forms of scope
+creep this principle guards against — additional rooms/floors and private spaces remain
+excluded.
 
 ### II. Simplest Proximity Architecture First
 Voice/video proximity is implemented as: all participants join a single LiveKit room;
 proximity is simulated purely on the client by adjusting per-participant volume based on
-avatar distance. Dynamic subscribe/unsubscribe to peer media tracks, spatial audio zones,
-or isolated-audio meeting rooms are NOT implemented in the MVP, regardless of perceived
-scalability benefits.
+avatar distance — with one narrow exception: when two avatars share membership in the same
+named zone (Principle I), their connection is set to full volume/video for that pair,
+overriding the distance falloff. This zone override MUST remain pure client-side
+volume-attenuation logic (a zone-membership check that picks between full volume and the
+existing distance-falloff function) — it MUST NOT introduce dynamic subscribe/unsubscribe
+to peer media tracks, server-side selective media routing, or isolated-audio acoustic
+rooms; all participants remain in the one shared LiveKit room regardless of zone. Beyond
+this single override, dynamic peer-track subscription and isolated-audio meeting rooms are
+NOT implemented in the MVP, regardless of perceived scalability benefits.
 **Rationale**: The all-in-one-room approach is trivial to build and reason about. It does
 not scale to hundreds of concurrent users, but the MVP's job is to validate the core
-experience, not to handle load it does not yet have.
+experience, not to handle load it does not yet have. The zone override preserves this: it
+adds one cheap boolean check to the existing per-frame volume computation, not a second
+architecture — it does not reopen the door to isolated meeting rooms or per-pair private
+connections, which remain explicitly out of scope.
 
 ### III. No Backend-Persisted Identity
 Users join as guests. There is no login, no user accounts, and no server-side identity
@@ -200,4 +238,4 @@ Compliance review: before starting a new subsystem spec, verify its scope and te
 approach against this constitution; deviations must be justified in that spec's
 Complexity Tracking section or trigger a constitution amendment first.
 
-**Version**: 1.5.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-18
+**Version**: 2.0.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-20

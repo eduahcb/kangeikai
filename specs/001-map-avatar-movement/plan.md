@@ -50,8 +50,10 @@ rendering unit)
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **I. Locked MVP Scope** — PASS. Feature implements only the map+avatar+movement slice listed
-  in `docs/mvp-plan.md`; no zones, no map editor, no extra maps.
+- **I. Locked MVP Scope** — PASS (re-checked against constitution v2.0.0). Feature implements
+  the map+avatar+movement slice listed in `docs/mvp-plan.md`, now including parsing/exposing
+  the named `personal-desk`/`public-space` zones (FR-010) that Principle I explicitly allows
+  within the single fixed map; no map editor, no extra maps/floors, no private zones.
 - **II. Simplest Proximity Architecture First** — N/A to this feature (owned by the proximity
   A/V feature); no conflict.
 - **III. No Backend-Persisted Identity** — PASS. This feature holds no identity data; avatar
@@ -133,4 +135,16 @@ first feature and every later feature's code is expected to already comply with 
 
 ## Complexity Tracking
 
-*No violations — table omitted.*
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|---|---|---|
+| Pre-commit hook wired without `simple-git-hooks` (constitution Principle V names this
+  package specifically), using a hand-written native git hook instead | Explicit maintainer
+  preference during T011 implementation: avoid an extra npm dependency for what a plain
+  shell script + git's own hook mechanism already does | The constitution's own suggested
+  alternative — a full constitution amendment — was judged disproportionate for a tooling
+  substitution this narrow (no scope/architecture change); documenting the deviation here
+  per the Governance section's explicit escape hatch was preferred. Trade-off accepted: the
+  hook script now lives at `.githooks/pre-commit` (tracked) but must be copied to
+  `.git/hooks/pre-commit` once per clone (`.git/hooks/` isn't versioned by git) — every new
+  contributor needs that one manual step, documented in `AGENTS.md`, instead of it being
+  installed automatically via `postinstall` as `simple-git-hooks` would have done. |

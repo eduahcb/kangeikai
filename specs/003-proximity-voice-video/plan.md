@@ -51,11 +51,15 @@ this feature)
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **I. Locked MVP Scope** — PASS. No isolated meeting-room zones, no per-pair private calls —
-  exactly the proximity mechanic in `docs/mvp-plan.md`.
+- **I. Locked MVP Scope** — PASS (re-checked against constitution v2.0.0). No isolated
+  meeting-room zones, no per-pair private calls, no private zones — the zone-based full-volume
+  override (FR-011/FR-012) uses only the `personal-desk`/`public-space` zones Principle I now
+  explicitly allows within the single fixed map, exactly the proximity mechanic in
+  `docs/mvp-plan.md`.
 - **II. Simplest Proximity Architecture First** — PASS by construction. This feature *is* the
-  implementation of that principle: single LiveKit room, client-side volume attenuation, no
-  dynamic subscription logic.
+  implementation of that principle: single LiveKit room, client-side volume attenuation (either
+  the distance-falloff function or the zone-membership full-volume override, per Principle II's
+  narrow exception), no dynamic subscription logic, no isolated-audio rooms.
 - **III. No Backend-Persisted Identity** — PASS. LiveKit `identity` is scoped to the session
   (mirrors the Colyseus `sessionId`, see research.md); nothing is persisted server-side.
 - **IV. No Database in the MVP** — PASS. Token minting is stateless; no storage introduced.
