@@ -1,2 +1,23 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href='https://svelte.dev/docs/kit'>svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang='ts'>
+  import Phaser from 'phaser'
+  import { onDestroy, onMount } from 'svelte'
+
+  let gameContainer: HTMLDivElement
+  let game: Phaser.Game | undefined
+
+  onMount(() => {
+    game = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: gameContainer,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      scene: [],
+    })
+  })
+
+  onDestroy(() => {
+    game?.destroy(true)
+  })
+</script>
+
+<div bind:this={gameContainer}></div>

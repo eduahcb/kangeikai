@@ -64,16 +64,29 @@ runs cleanly, and committing a staged file with a lint error is blocked by the p
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T012 Define `AvatarDirection`, `AvatarMotionState`, `AvatarSpriteType`, `AvatarState`
+- [X] T012 Define `AvatarDirection`, `AvatarMotionState`, `AvatarSpriteType`, `AvatarState`
       types in `packages/shared/src/avatar.ts` per `contracts/avatar-state.md`
-- [ ] T013 [P] Add the Tiled map export and tileset image at
-      `apps/client/src/lib/assets/maps/office.json` and
-      `apps/client/src/lib/assets/maps/office-tileset.png`, including a dedicated collision
-      layer per `data-model.md` (`MapDefinition.collisionLayer`)
-- [ ] T014 [P] Add avatar sprite sheets at
-      `apps/client/src/lib/assets/sprites/avatar-man.png` and
-      `apps/client/src/lib/assets/sprites/avatar-woman.png`
-- [ ] T015 Create `apps/client/src/routes/+page.svelte` that mounts an empty `Phaser.Game`
+- [X] T013 [P] Add the Tiled map export and tileset images at
+      `apps/client/src/lib/assets/maps/welcome/welcome.tmj` plus its four embedded-tileset
+      source images (`Room_Builder_32x32.png`, `Interiors_32x32.png`, `Modern_Office_32x32.png`,
+      `Room_Builder_Office_32x32.png`). Note: actual map naming/tileset count differs from this
+      task's original text (single `office.json`/`office-tileset.png`) — updated in `plan.md`/
+      `quickstart.md` to match what was actually authored in Tiled. **Known gap, by explicit
+      decision**: the map has no dedicated collision layer yet (`data-model.md`'s
+      `MapDefinition.collisionLayer` doesn't exist on this map) — the avatar will pass through
+      everything until one is authored. Must be resolved before T021 (Phase 3, where collision
+      is actually wired). The five tileset entries in `welcome.tmj` are now all embedded
+      (`image`, not `source`); note two entries share the name `Room_Builder_32x32` (same image,
+      two gid ranges) — worth a quick empirical check in T020 that Phaser's
+      `map.addTilesetImage()` name-matching handles both correctly.
+- [X] T014 [P] Add avatar sprite sheets at
+      `apps/client/src/lib/assets/sprites/avatar-{man,woman}-{idle,walk}.png` (real character
+      art, 768×64px each — idle and walk shipped as separate sheets per `spriteType`, renamed to
+      kebab-case from the original `cleitin idle/walk.png` and `maria idle/walk.png`). The
+      generated placeholder sheets used earlier in this phase have been removed. Exact frame
+      grid (columns/rows, frames per direction) isn't determined yet — that's for T023 (Phase 4)
+      to work out empirically from the actual images before wiring animations.
+- [X] T015 Create `apps/client/src/routes/+page.svelte` that mounts an empty `Phaser.Game`
       instance in `onMount` (depends on T003 — with SSR disabled globally there's no server
       render to guard against; `onMount` is purely about waiting for the canvas's DOM element
       to exist)
