@@ -60,8 +60,15 @@ function toAvatarSnapshot(avatar: AvatarState): AvatarState {
 
 /**
  * Connects to the single shared "office" room, throttles/sends the local avatar's state, and
- * exposes both connection-state and remote-avatar events. Automatic reconnection (T022) lands
- * in Phase 5.
+ * exposes both connection-state and remote-avatar events.
+ *
+ * Automatic reconnection on an ungraceful drop (FR-008) is handled by `@colyseus/sdk`'s
+ * `Room` itself (per research.md's decision to rely on Colyseus's built-in mechanism rather
+ * than custom reconnect code): on an abnormal close it retries with backoff behind the
+ * scenes, reusing the same `Room` instance/session — `onDrop`/`onReconnect` below only
+ * surface that as connection-state events; `onLeave` only fires for a genuine leave (a
+ * consented disconnect, or the retries giving up once the server's reconnection grace period
+ * elapses, per FR-009).
  */
 export class RoomConnection {
   private readonly client: Client
@@ -110,6 +117,8 @@ export class RoomConnection {
       const room = await this.client.joinOrCreate<OfficeRoomLike>('office', options)
       this.room = room
       room.onLeave(() => this.emitConnectionState('disconnected'))
+      room.onDrop(() => this.emitConnectionState('connecting'))
+      room.onReconnect(() => this.emitConnectionState('connected'))
       this.bindRemoteAvatarEvents(room)
       this.emitConnectionState('connected')
     }

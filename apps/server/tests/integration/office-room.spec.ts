@@ -92,4 +92,21 @@ describe('officeRoom', () => {
     await clientB.leave()
     await waitFor(clientA, () => !clientA.state.players.has(clientB.sessionId))
   })
+
+  it('hides an ungracefully-disconnected participant during the grace period and resumes the same session on reconnection', async () => {
+    const room = await colyseus.createRoom('office', { spriteType: 'man' })
+    const clientA = await colyseus.connectTo(room, { spriteType: 'man' })
+    const clientB = await colyseus.connectTo(room, { spriteType: 'woman' })
+    await waitFor(clientA, () => clientA.state.players.has(clientB.sessionId))
+
+    const { sessionId, reconnectionToken } = clientB
+    // `leave(false)` closes the socket directly rather than sending the LEAVE_ROOM protocol
+    // message, simulating an ungraceful disconnect (a clean `leave()` sends CONSENTED instead).
+    await clientB.leave(false)
+    await waitFor(clientA, () => !clientA.state.players.has(sessionId))
+
+    const reconnectedB = await colyseus.sdk.reconnect(reconnectionToken)
+    expect(reconnectedB.sessionId).toBe(sessionId)
+    await waitFor(clientA, () => clientA.state.players.has(sessionId))
+  })
 })
