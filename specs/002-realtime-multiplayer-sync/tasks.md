@@ -146,20 +146,35 @@ resumes without a manual reload and other participants see no permanent gap (spe
 
 ### Tests for User Story 3
 
-- [ ] T019 [P] [US3] Integration test: an ungraceful disconnect enters the grace period (session
+- [X] T019 [P] [US3] Integration test: an ungraceful disconnect enters the grace period (session
       excluded from `players`), and reconnecting within the window resumes the same session,
-      in `apps/server/tests/integration/office-room.spec.ts` (depends on T017)
+      in `apps/server/tests/integration/office-room.spec.ts` (depends on T017). Simulates the
+      ungraceful disconnect with the client SDK's `room.leave(false)` (closes the socket
+      directly instead of sending the `LEAVE_ROOM` protocol message, unlike a plain
+      `leave()`), and the reconnect with `colyseus.sdk.reconnect(reconnectionToken)`.
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Implement `OfficeRoom.onLeave`'s ungraceful-disconnect path: call Colyseus's
+- [X] T020 [US3] Implement `OfficeRoom.onLeave`'s ungraceful-disconnect path: call Colyseus's
       `allowReconnection` with a bounded grace period, excluding the session from `players`
       during the window (FR-005, FR-008), in `apps/server/src/rooms/office-room.ts` (depends
-      on T017)
-- [ ] T021 [US3] Implement grace-period-timeout finalization: treat an unresolved grace period
-      as a full leave (FR-009), in `apps/server/src/rooms/office-room.ts` (depends on T020)
-- [ ] T022 [US3] Implement client-side automatic reconnection attempt on connection drop in
-      `apps/client/src/lib/network/room-connection.ts` (depends on T014)
+      on T017). Branches on the `code` param `onLeave` receives — `CloseCode.CONSENTED` is the
+      clean-leave path (T017); anything else removes the avatar from `players` immediately,
+      then calls `allowReconnection` with a 15s grace period and re-adds the same
+      `AvatarSchema` instance to `players` if it resolves.
+- [X] T021 [US3] Implement grace-period-timeout finalization: treat an unresolved grace period
+      as a full leave (FR-009), in `apps/server/src/rooms/office-room.ts` (depends on T020).
+      No extra code needed beyond T020 — the avatar is already removed from `players` before
+      `allowReconnection` is awaited, so a rejected/timed-out grace period (caught, as a no-op)
+      leaves that removal as the final state.
+- [X] T022 [US3] Implement client-side automatic reconnection attempt on connection drop in
+      `apps/client/src/lib/network/room-connection.ts` (depends on T014). `@colyseus/sdk`'s
+      `Room` already retries an abnormal close with backoff and resumes the same `Room`
+      instance/session on its own (research.md's chosen approach); this task's actual work is
+      wiring that up to `RoomConnection`'s connection-state events — `room.onDrop` (retrying)
+      now reports `'connecting'` and `room.onReconnect` (resumed) reports `'connected'`,
+      alongside the existing `room.onLeave` → `'disconnected'` (now only reached for a genuine
+      leave: consented, or retries exhausted after the server's grace period elapses).
 
 **Checkpoint**: All three user stories independently functional.
 
