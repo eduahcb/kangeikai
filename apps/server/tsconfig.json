@@ -3,7 +3,6 @@
     "target": "ES2022",
     "useDefineForClassFields": false,
     "experimentalDecorators": true,
-    "rootDir": "src",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,

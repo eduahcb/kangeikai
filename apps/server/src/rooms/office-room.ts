@@ -1,13 +1,47 @@
+import type { Client } from 'colyseus'
 import { Room } from 'colyseus'
+import * as v from 'valibot'
+import { officeJoinOptionsSchema, updateStatePayloadSchema } from './message-schemas'
+import { AvatarSchema } from './schema/avatar-schema'
 import { OfficeRoomState } from './schema/office-room-state'
 
 /**
- * Skeleton for Phase 2 (T009): registers the room and initializes empty state so the server
- * boots and accepts a join with no state-sync logic yet. onJoin/onLeave/onMessage land in
- * Phase 3+ (T012, T013, T017, T020, T021).
+ * Placeholder spawn point, matching apps/client's office-scene.ts SPAWN_X/SPAWN_Y — see that
+ * file's comment on the map's current lack of a collision layer (same known gap applies here).
  */
+const SPAWN_X = 150
+const SPAWN_Y = 150
+
 export class OfficeRoom extends Room<{ state: OfficeRoomState }> {
   onCreate(): void {
     this.setState(new OfficeRoomState())
+
+    this.onMessage('updateState', (client, message) => {
+      const result = v.safeParse(updateStatePayloadSchema, message)
+      if (!result.success) {
+        return
+      }
+
+      const avatar = this.state.players.get(client.sessionId)
+      if (!avatar) {
+        return
+      }
+
+      avatar.x = result.output.x
+      avatar.y = result.output.y
+      avatar.direction = result.output.direction
+      avatar.motionState = result.output.motionState
+    })
+  }
+
+  onJoin(client: Client, options: unknown): void {
+    const { spriteType } = v.parse(officeJoinOptionsSchema, options)
+
+    const avatar = new AvatarSchema()
+    avatar.spriteType = spriteType
+    avatar.x = SPAWN_X
+    avatar.y = SPAWN_Y
+
+    this.state.players.set(client.sessionId, avatar)
   }
 }

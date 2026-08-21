@@ -71,23 +71,31 @@ near real time (spec.md SC-001).
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Integration test: two simulated clients join and position/direction/
+- [X] T011 [P] [US1] Integration test: two simulated clients join and position/direction/
       motion-state changes propagate between them, in
-      `apps/server/tests/integration/office-room.spec.ts` (depends on T009)
+      `apps/server/tests/integration/office-room.spec.ts` (depends on T009). Uses the client
+      room's `onStateChange` signal rather than `@colyseus/testing`'s own `waitForNextPatch()`
+      helper — that helper is broken against the installed `@colyseus/sdk@0.17.43` (it
+      monkey-patches a `Room.prototype.patch` method that no longer exists on that SDK
+      version, so its returned promise never resolves).
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement `OfficeRoom.onJoin`: validate `options` with
+- [X] T012 [US1] Implement `OfficeRoom.onJoin`: validate `options` with
       `officeJoinOptionsSchema`, then seed a `ParticipantSession`/`avatarState` from
       `spriteType` plus a valid spawn position, in `apps/server/src/rooms/office-room.ts`
       (depends on T007, T008, T009)
-- [ ] T013 [US1] Implement `OfficeRoom`'s `updateState` message handler: validate the payload
+- [X] T013 [US1] Implement `OfficeRoom`'s `updateState` message handler: validate the payload
       with `updateStatePayloadSchema` (drop on failure), then write `x`/`y`/`direction`/
       `motionState` into the sender's own schema entry, per
-      `contracts/office-room-protocol.md` (depends on T012, T008)
-- [ ] T014 [US1] Implement `RoomConnection.sendState` (throttled on-change, capped ~20/sec) in
+      `contracts/office-room-protocol.md` (depends on T012, T008). Validates manually with
+      `v.safeParse` inside the handler rather than passing the schema to Colyseus's built-in
+      `onMessage(type, validationSchema, callback)` overload — that overload's failure path
+      forcibly disconnects the client (`client.leave()`), contradicting the contract's
+      "dropped rather than applied" (connection stays alive) behavior.
+- [X] T014 [US1] Implement `RoomConnection.sendState` (throttled on-change, capped ~20/sec) in
       `apps/client/src/lib/network/room-connection.ts` (depends on T010)
-- [ ] T015 [US1] Wire `RoomConnection`'s remote-state-change events into `OfficeScene` to
+- [X] T015 [US1] Wire `RoomConnection`'s remote-state-change events into `OfficeScene` to
       spawn/update remote `Avatar` entities, in
       `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T014; reuses feature 001's
       `Avatar` entity)
