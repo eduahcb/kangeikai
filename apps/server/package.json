@@ -1,0 +1,26 @@
+{
+  "name": "@kangeikai/server",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^4.0.31",
+    "@colyseus/ws-transport": "^0.17.13",
+    "@kangeikai/shared": "workspace:*",
+    "colyseus": "^0.17.10",
+    "express": "^5.2.1",
+    "valibot": "^1.4.2"
+  },
+  "devDependencies": {
+    "@colyseus/testing": "^0.17.11",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.0"
+  }
+}
