@@ -210,10 +210,23 @@ avatar stays visible (spec.md Acceptance Scenarios for Story 3, SC-004).
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Configure the Phaser camera's bounds to the map's pixel dimensions and call
-      `startFollow(avatar)` in `office-scene.ts` (FR-006) (depends on T020)
-- [ ] T026 [US3] Handle browser window resize to recompute the viewport/camera size in
-      `office-scene.ts` (Edge Case: resize near a map edge) (depends on T025)
+- [X] T025 [US3] Configure the Phaser camera's bounds to the map's pixel dimensions and call
+      `startFollow(avatar)` in `office-scene.ts` (FR-006) (depends on T020). Implemented as
+      manual per-axis clamped scroll (`clampedCameraScroll()`) each frame rather than
+      `setBounds()`+`startFollow()` directly — Phaser's built-in bounds clamping only handles
+      "map bigger than viewport"; it doesn't center a map *smaller* than the viewport (it pins
+      to a corner instead), which the current test map (`welcome.tmj`, 1536×1024) needs on any
+      screen wider than that. The manual clamp formula handles both cases uniformly. Camera zoom
+      is fixed at 1x (`CAMERA_ZOOM`) — matches Gather's approach of a fixed, comfortable zoom
+      rather than scaling to fit the screen; Gather's maps are simply authored large enough that
+      panning is the norm. User-controlled zoom (Gather has scroll-wheel zoom in/out) is a
+      separate feature, not yet scoped — added to `docs/mvp-plan.md`'s "Fora do MVP" list.
+- [X] T026 [US3] Handle browser window resize to recompute the viewport/camera size in
+      `office-scene.ts` (Edge Case: resize near a map edge) (depends on T025). `+page.svelte`'s
+      `Phaser.Game` now uses `scale: { mode: Phaser.Scale.RESIZE }`, which keeps the canvas and
+      (via `CameraManager.onResize`) the main camera's width/height in sync with the container
+      element's size on every window resize; `clampedCameraScroll()` recomputing every frame
+      then naturally keeps the avatar in view at the new size.
 
 **Checkpoint**: All three user stories independently functional.
 

@@ -35,6 +35,9 @@ Caso de uso primário: **virtual office** (presença assíncrona de time/comunid
 - Colisão do avatar com obstáculos do mapa (bloquear movimento em paredes/móveis) — o MVP libera
   o avatar andar livremente por cima de tudo; entra numa wave seguinte, junto com a layer de
   colisão correspondente no `welcome.tmj` (ainda não existe).
+- Zoom manual controlado pelo usuário (scroll/botões +/-, como no Gather). O MVP usa zoom fixo
+  em 1x (câmera segue o avatar, sem opção de aproximar/afastar); controle manual de zoom fica
+  pra uma wave seguinte.
 
 ## Stack técnica
 
