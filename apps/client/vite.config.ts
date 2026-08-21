@@ -1,6 +1,6 @@
 import adapter from '@sveltejs/adapter-static'
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
@@ -16,4 +16,8 @@ export default defineConfig({
       adapter: adapter({ fallback: 'index.html' }),
     }),
   ],
+  test: {
+    environment: 'node',
+    include: ['tests/unit/**/*.spec.ts'],
+  },
 })

@@ -30,7 +30,12 @@ on and are expected to already comply with.
       `packages/shared/tsconfig.json`, `packages/shared/src/index.ts`) and add it as a
       workspace dependency of `apps/client`
 - [X] T005 [P] Add the Phaser.js dependency to `apps/client/package.json`
-- [X] T006 [P] Configure Vitest for `apps/client` (`apps/client/vitest.config.ts`)
+- [X] T006 [P] Configure Vitest for `apps/client`. Originally a separate
+      `apps/client/vitest.config.ts`; later consolidated into `apps/client/vite.config.ts`'s
+      `test` field (via `vitest/config`'s `defineConfig`, a superset of Vite's) once
+      `vitest` was bumped to `^4.1.0` — that version is the first to support `vite@^8`, which
+      resolved a real type-check conflict (two different `vite` majors' `Plugin` types clashing)
+      that blocked the consolidation on `vitest@^3.2.0`.
 - [X] T007 [P] Create `AGENTS.md` at the repository root as the single source of truth for
       AI coding-agent instructions (universal, tool-agnostic, per constitution Principle V)
 - [X] T008 Create `CLAUDE.md` at the repository root containing only an `@AGENTS.md` import,
