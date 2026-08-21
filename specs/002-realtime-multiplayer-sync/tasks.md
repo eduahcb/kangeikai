@@ -15,14 +15,17 @@ contracts/office-room-protocol.md, quickstart.md. Also depends on feature 001's
 **Purpose**: Add the server app to the existing monorepo (feature 001 already created the
 pnpm workspace root and `apps/client`).
 
-- [ ] T001 [P] Scaffold `apps/server` as a new pnpm workspace member (`apps/server/package.json`,
+- [X] T001 [P] Scaffold `apps/server` as a new pnpm workspace member (`apps/server/package.json`,
       `apps/server/tsconfig.json`)
-- [ ] T002 [P] Add Colyseus server dependencies (`colyseus`, `@colyseus/schema`, HTTP
+- [X] T002 [P] Add Colyseus server dependencies (`colyseus`, `@colyseus/schema`, HTTP
       transport) to `apps/server/package.json`
-- [ ] T003 [P] Add the Colyseus client SDK dependency (`colyseus.js`) to
-      `apps/client/package.json`
-- [ ] T004 [P] Add `@colyseus/testing` as a dev dependency to `apps/server/package.json`
-- [ ] T005 [P] Add the `valibot` dependency to `apps/server/package.json` (network-message
+- [X] T003 [P] Add the Colyseus client SDK dependency to `apps/client/package.json` — used
+      `@colyseus/sdk` instead of the `colyseus.js` named in this task: `colyseus.js`'s latest
+      published version depends on `@colyseus/schema@^3`, incompatible with the
+      `@colyseus/schema@^4` pulled in by the server's `colyseus@0.17` (T002); `@colyseus/sdk`
+      is the actively-published successor client package matching that schema major
+- [X] T004 [P] Add `@colyseus/testing` as a dev dependency to `apps/server/package.json`
+- [X] T005 [P] Add the `valibot` dependency to `apps/server/package.json` (network-message
       validation, per constitution Principle V)
 
 **Checkpoint**: `pnpm install` succeeds; `apps/server` has a runnable (empty) entrypoint.

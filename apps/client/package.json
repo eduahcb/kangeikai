@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@colyseus/sdk": "^0.17.43",
     "@kangeikai/shared": "workspace:*",
     "phaser": "^3.90.0"
   },
