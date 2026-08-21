@@ -38,18 +38,22 @@ pnpm workspace root and `apps/client`).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Define `AvatarSchema` (Colyseus `Schema` mirroring `AvatarState` from
+- [X] T006 Define `AvatarSchema` (Colyseus `Schema` mirroring `AvatarState` from
       `packages/shared/src/avatar.ts`) in `apps/server/src/rooms/schema/avatar-schema.ts`
       (depends on T002)
-- [ ] T007 Define `OfficeRoomState` (`players: MapSchema<AvatarSchema>`) in
+- [X] T007 Define `OfficeRoomState` (`players: MapSchema<AvatarSchema>`) in
       `apps/server/src/rooms/schema/office-room-state.ts` (depends on T006)
-- [ ] T008 [P] Define `officeJoinOptionsSchema` and `updateStatePayloadSchema` (Valibot
+- [X] T008 [P] Define `officeJoinOptionsSchema` and `updateStatePayloadSchema` (Valibot
       validation schemas for the two client→server message shapes in
       `contracts/office-room-protocol.md`) in `apps/server/src/rooms/message-schemas.ts`
       (depends on T005)
-- [ ] T009 Implement the server entrypoint — Colyseus app + HTTP server registering the
-      `office` room — in `apps/server/src/index.ts` (depends on T007)
-- [ ] T010 Implement a `RoomConnection` skeleton (connects to the `office` room with
+- [X] T009 Implement the server entrypoint — Colyseus app + HTTP server registering the
+      `office` room — in `apps/server/src/index.ts` (depends on T007). Also adds a minimal
+      `OfficeRoom` skeleton (`apps/server/src/rooms/office-room.ts`, empty `onCreate` only) so
+      there's something to register; `@colyseus/schema`'s `@type()` decorators required adding
+      `experimentalDecorators`/`useDefineForClassFields` to `apps/server/tsconfig.json`
+      (undocumented prerequisite, not called out in this task's file list).
+- [X] T010 Implement a `RoomConnection` skeleton (connects to the `office` room with
       `OfficeJoinOptions`, exposes connection-state events) in
       `apps/client/src/lib/network/room-connection.ts` (depends on T003)
 

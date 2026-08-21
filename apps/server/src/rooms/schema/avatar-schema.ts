@@ -1,0 +1,11 @@
+import type { AvatarDirection, AvatarMotionState, AvatarSpriteType } from '@kangeikai/shared'
+import { Schema, type } from '@colyseus/schema'
+
+/** Colyseus state-sync mirror of packages/shared/src/avatar.ts's AvatarState. */
+export class AvatarSchema extends Schema {
+  @type('number') x = 0
+  @type('number') y = 0
+  @type('string') direction: AvatarDirection = 'down'
+  @type('string') motionState: AvatarMotionState = 'idle'
+  @type('string') spriteType: AvatarSpriteType = 'man'
+}
