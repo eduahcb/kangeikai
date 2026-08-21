@@ -234,10 +234,26 @@ avatar stays visible (spec.md Acceptance Scenarios for Story 3, SC-004).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T027 Run `quickstart.md` validation scenarios end-to-end manually and record results
-- [ ] T028 [P] Review `apps/client/src/lib/game/` code against `data-model.md` validation
+- [X] T027 Run `quickstart.md` validation scenarios end-to-end manually and record results.
+      Results recorded inline in `quickstart.md`: scenarios 1/2/4 confirmed live across Phases
+      3-5; 5/6 confirmed via T016/T017's unit tests plus thin, logic-free wiring in
+      `office-scene.ts`; 7 (map bigger than viewport) only partially exercisable with the
+      current, smaller-than-most-screens test map — re-verify once the real map exists; 8
+      (resize near an edge) surfaced a real bug on manual testing — the avatar had no outer-map
+      clamp at all, so it could walk to a position outside the map's pixel dimensions that the
+      (map-bounds-clamped) camera could never scroll back to, disappearing for good. Fixed:
+      `Avatar` now clamps `x`/`y` to `[0, mapWidthPx]`/`[0, mapHeightPx]` every update (new
+      `avatar.spec.ts` unit test covers it); confirmed fixed live. This is distinct from
+      FR-004's deferred *interior* obstacle collision — see spec.md's new Edge Case entry.
+- [X] T028 [P] Review `apps/client/src/lib/game/` code against `data-model.md` validation
       rules (spawn point never inside collision layer, `spriteType` restricted to the two
-      defined values)
+      defined values). `spriteType` is enforced by TypeScript's `AvatarSpriteType` union at
+      every call site; the one `Avatar` construction site (`office-scene.ts`) passes the literal
+      `'man'` — no untrusted input reaches it yet (that arrives with feature 004, guest entry
+      flow, where runtime/Valibot validation will actually matter). Spawn point (150, 150):
+      confirmed to sit on a painted `ground` tile (non-zero gid) and outside every zone's
+      bounding box; the "outside collisionLayer" half of the rule is moot until a collision
+      layer exists (T013/T021's known deferral).
 
 ---
 
