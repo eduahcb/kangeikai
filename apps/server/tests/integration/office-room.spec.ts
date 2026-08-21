@@ -32,6 +32,35 @@ function nextStateChange(client: SDKRoom): Promise<void> {
   return new Promise(resolve => client.onStateChange.once(() => resolve()))
 }
 
+/**
+ * Waits for `predicate` to hold, re-checking on every subsequent patch rather than assuming
+ * the very next patch is the relevant one — join/leave can arrive alongside unrelated patches
+ * (e.g. a client's own initial full-state sync), so a single `onStateChange.once()` can resolve
+ * before the awaited change has actually landed.
+ */
+function waitFor(client: SDKRoom, predicate: () => boolean, timeoutMs = 2000): Promise<void> {
+  if (predicate()) {
+    return Promise.resolve()
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      client.onStateChange.remove(handleChange)
+      reject(new Error('Timed out waiting for room state condition'))
+    }, timeoutMs)
+
+    function handleChange(): void {
+      if (predicate()) {
+        clearTimeout(timeout)
+        client.onStateChange.remove(handleChange)
+        resolve()
+      }
+    }
+
+    client.onStateChange(handleChange)
+  })
+}
+
 describe('officeRoom', () => {
   it('propagates position/direction/motion-state changes between two connected clients', async () => {
     const room = await colyseus.createRoom('office', { spriteType: 'man' })
@@ -51,5 +80,16 @@ describe('officeRoom', () => {
     expect(aFromB?.y).toBe(84)
     expect(aFromB?.direction).toBe('right')
     expect(aFromB?.motionState).toBe('walking')
+  })
+
+  it('broadcasts a new avatar on join and removes it on a clean leave', async () => {
+    const room = await colyseus.createRoom('office', { spriteType: 'man' })
+    const clientA = await colyseus.connectTo(room, { spriteType: 'man' })
+
+    const clientB = await colyseus.connectTo(room, { spriteType: 'woman' })
+    await waitFor(clientA, () => clientA.state.players.has(clientB.sessionId))
+
+    await clientB.leave()
+    await waitFor(clientA, () => !clientA.state.players.has(clientB.sessionId))
   })
 })
