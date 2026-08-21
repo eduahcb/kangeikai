@@ -42,8 +42,11 @@ export function getSpriteAnimation(spriteType: AvatarSpriteType, motionState: Av
 /**
  * Pure position/state logic, decoupled from Phaser rendering (research.md's testability
  * approach) — OfficeScene owns the visual representation and reads `getState()` each frame to
- * sync it. No obstacle collision yet (tasks.md T013 known gap): position updates unconditionally
- * on movement intent until T021 clamps it against the map's collision layer.
+ * sync it. No *interior* obstacle collision yet (tasks.md T013/T021 known gap, deferred past
+ * the MVP) — the avatar walks freely through furniture/walls. It IS clamped to the map's outer
+ * edges (mapWidthPx/mapHeightPx below), which is a distinct, non-deferred fix: without it the
+ * avatar could walk into negative/out-of-map coordinates the camera (clamped to the map bounds)
+ * can never scroll to, making it disappear with no way back — found live during Phase 6 testing.
  */
 export class Avatar {
   x: number
@@ -51,11 +54,15 @@ export class Avatar {
   direction: AvatarDirection = 'down'
   motionState: AvatarMotionState = 'idle'
   readonly spriteType: AvatarSpriteType
+  private readonly mapWidthPx: number
+  private readonly mapHeightPx: number
 
-  constructor(spawnX: number, spawnY: number, spriteType: AvatarSpriteType) {
+  constructor(spawnX: number, spawnY: number, spriteType: AvatarSpriteType, mapWidthPx: number, mapHeightPx: number) {
     this.x = spawnX
     this.y = spawnY
     this.spriteType = spriteType
+    this.mapWidthPx = mapWidthPx
+    this.mapHeightPx = mapHeightPx
   }
 
   update(intent: MovementIntent, deltaSeconds: number): void {
@@ -65,6 +72,8 @@ export class Avatar {
       const vector = DIRECTION_VECTORS[intent.direction]
       this.x += vector.x * SPEED_PX_PER_SECOND * deltaSeconds
       this.y += vector.y * SPEED_PX_PER_SECOND * deltaSeconds
+      this.x = Math.min(Math.max(this.x, 0), this.mapWidthPx)
+      this.y = Math.min(Math.max(this.y, 0), this.mapHeightPx)
     }
     else {
       this.motionState = 'idle'

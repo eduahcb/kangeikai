@@ -92,6 +92,12 @@ visible viewport scrolls to follow it, stopping appropriately at the map's outer
 - What happens if the avatar's starting position happens to be on/inside an obstacle due to a
   map authoring mistake? Out of scope for this feature — treated as a map-authoring defect, not
   a runtime behavior to design around.
+- What happens when the avatar moves toward the map's outer edge (as distinct from an interior
+  obstacle — FR-004's collision is deferred past the MVP, see Assumptions, but this is not)? The
+  avatar MUST stop at the map's outer boundary, never moving to a position outside the map's
+  pixel dimensions. Without this, the avatar can walk to a position the camera (clamped to the
+  map's bounds, FR-006) can never scroll to, making it disappear with no way back — found live
+  during Phase 6 testing, fixed by clamping `Avatar.x`/`y` to `[0, mapWidthPx]`/`[0, mapHeightPx]`.
 
 ## Requirements *(mandatory)*
 

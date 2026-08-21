@@ -133,7 +133,7 @@ export class OfficeScene extends Phaser.Scene {
       }
     }
 
-    this.avatar = new Avatar(SPAWN_X, SPAWN_Y, 'man')
+    this.avatar = new Avatar(SPAWN_X, SPAWN_Y, 'man', this.mapWidthPx, this.mapHeightPx)
     this.avatarView = this.add.sprite(this.avatar.x, this.avatar.y, avatarTextureKey('man', 'idle'))
     this.avatarView.anims.play(getSpriteAnimation(this.avatar.spriteType, this.avatar.motionState, this.avatar.direction).key)
 
