@@ -179,10 +179,21 @@ direction and animates; stop and confirm it returns to idle (spec.md Acceptance 
 
 ### Implementation for User Story 2
 
-- [ ] T023 [P] [US2] Define walk/idle animation frames for each of the four directions on the
-      `Avatar` entity in `apps/client/src/lib/game/entities/avatar.ts` (depends on T014, T019)
-- [ ] T024 [US2] Update `Avatar.direction`/`motionState` from `MovementController` input each
-      frame and drive animation playback accordingly (FR-005) (depends on T018, T023)
+- [X] T023 [P] [US2] Define walk/idle animation frames for each of the four directions on the
+      `Avatar` entity in `apps/client/src/lib/game/entities/avatar.ts` (depends on T014, T019).
+      `AVATAR_FRAME_RANGES` + `getSpriteAnimation()`: each character sheet (768×64px, 32px-wide
+      frames) packs all four directions into one row, six frames each, in **right, up, left,
+      down** order (confirmed by the asset's owner — no frame documentation ships with this
+      itch.io character-builder export). No mirroring/reuse between directions needed — all four
+      have real, distinct art.
+- [X] T024 [US2] Update `Avatar.direction`/`motionState` from `MovementController` input each
+      frame and drive animation playback accordingly (FR-005) (depends on T018, T023).
+      `OfficeScene` loads all four `avatar-{man,woman}-{idle,walk}.png` sheets as spritesheets,
+      creates one Phaser animation per spriteType×motionState×direction (16 total) from
+      `AVATAR_FRAME_RANGES`, and swaps the playing animation in `update()` whenever
+      `getSpriteAnimation(...)`'s key changes. Confirmed working in-browser (all four
+      directions face correctly, walk/idle animate, a couple of "passing" frames mid-walk-cycle
+      that look idle-ish are normal walk-cycle art, not a bug).
 
 **Checkpoint**: User Stories 1 and 2 both work independently — movement now reads clearly.
 
