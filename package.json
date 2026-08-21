@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "pnpm --filter ./apps/client dev",
+    "dev:client": "pnpm --filter ./apps/client dev",
+    "dev:server": "pnpm --filter ./apps/server dev",
     "build": "pnpm --filter ./apps/client build",
     "lint": "eslint .",
     "test": "pnpm --filter ./apps/client test"

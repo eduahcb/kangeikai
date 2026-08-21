@@ -1,4 +1,4 @@
-import type { AvatarDirection, AvatarSpriteType } from '@kangeikai/shared'
+import type { AvatarDirection, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
 import interiorsUrl from '$lib/assets/maps/welcome/Interiors_32x32-used.png?url'
 import modernOfficeUrl from '$lib/assets/maps/welcome/Modern_Office_32x32.png?url'
 import roomBuilderUrl from '$lib/assets/maps/welcome/Room_Builder_32x32.png?url'
@@ -10,6 +10,7 @@ import avatarWomanIdleUrl from '$lib/assets/sprites/avatar-woman-idle.png?url'
 import avatarWomanWalkUrl from '$lib/assets/sprites/avatar-woman-walk.png?url'
 import { Avatar, AVATAR_FRAME_RANGES, getSpriteAnimation } from '$lib/game/entities/avatar'
 import { MovementController } from '$lib/game/input/movement-controller'
+import { RoomConnection } from '$lib/network/room-connection'
 import Phaser from 'phaser'
 
 /**
@@ -74,8 +75,15 @@ function clampedCameraScroll(avatarPos: number, viewportSize: number, mapSize: n
   return Math.min(Math.max(desired, 0), mapSize - viewportSize)
 }
 
+interface RemoteAvatarEntry {
+  avatar: Avatar
+  view: Phaser.GameObjects.Sprite
+}
+
 export class OfficeScene extends Phaser.Scene {
   private readonly movementController = new MovementController()
+  private readonly roomConnection = new RoomConnection()
+  private readonly remoteAvatars = new Map<string, RemoteAvatarEntry>()
   private avatar!: Avatar
   private avatarView!: Phaser.GameObjects.Sprite
   private mapWidthPx = 0
@@ -141,10 +149,20 @@ export class OfficeScene extends Phaser.Scene {
     this.input.keyboard?.on('keyup', this.handleKeyUp, this)
     this.game.events.on(Phaser.Core.Events.BLUR, this.handleBlur, this)
 
+    this.roomConnection.onRemoteAvatarAdd((sessionId, state) => this.spawnRemoteAvatar(sessionId, state))
+    this.roomConnection.onRemoteAvatarChange((sessionId, state) => this.updateRemoteAvatar(sessionId, state))
+    this.roomConnection.onRemoteAvatarRemove(sessionId => this.removeRemoteAvatar(sessionId))
+    // spriteType is hardcoded 'man' for now, matching the local avatar above — spec 004
+    // (guest entry flow) will replace both with the guest's actual chosen spriteType.
+    this.roomConnection.connect({ spriteType: 'man' }).catch((error: unknown) => {
+      console.warn('kangeikai: failed to connect to the shared room', error)
+    })
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.keyboard?.off('keydown', this.handleKeyDown, this)
       this.input.keyboard?.off('keyup', this.handleKeyUp, this)
       this.game.events.off(Phaser.Core.Events.BLUR, this.handleBlur, this)
+      this.roomConnection.disconnect()
     })
   }
 
@@ -160,6 +178,48 @@ export class OfficeScene extends Phaser.Scene {
     const camera = this.cameras.main
     camera.scrollX = clampedCameraScroll(this.avatar.x, camera.width / camera.zoom, this.mapWidthPx)
     camera.scrollY = clampedCameraScroll(this.avatar.y, camera.height / camera.zoom, this.mapHeightPx)
+
+    this.roomConnection.sendState({
+      x: this.avatar.x,
+      y: this.avatar.y,
+      direction: this.avatar.direction,
+      motionState: this.avatar.motionState,
+    })
+  }
+
+  private spawnRemoteAvatar(sessionId: string, state: AvatarState): void {
+    const avatar = new Avatar(state.x, state.y, state.spriteType, this.mapWidthPx, this.mapHeightPx)
+    avatar.direction = state.direction
+    avatar.motionState = state.motionState
+
+    const view = this.add.sprite(avatar.x, avatar.y, avatarTextureKey(avatar.spriteType, 'idle'))
+    view.anims.play(getSpriteAnimation(avatar.spriteType, avatar.motionState, avatar.direction).key)
+
+    this.remoteAvatars.set(sessionId, { avatar, view })
+  }
+
+  private updateRemoteAvatar(sessionId: string, state: AvatarState): void {
+    const entry = this.remoteAvatars.get(sessionId)
+    if (!entry) {
+      this.spawnRemoteAvatar(sessionId, state)
+      return
+    }
+
+    entry.avatar.x = state.x
+    entry.avatar.y = state.y
+    entry.avatar.direction = state.direction
+    entry.avatar.motionState = state.motionState
+    entry.view.setPosition(state.x, state.y)
+
+    const animation = getSpriteAnimation(state.spriteType, state.motionState, state.direction)
+    if (entry.view.anims.currentAnim?.key !== animation.key) {
+      entry.view.anims.play(animation.key)
+    }
+  }
+
+  private removeRemoteAvatar(sessionId: string): void {
+    this.remoteAvatars.get(sessionId)?.view.destroy()
+    this.remoteAvatars.delete(sessionId)
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
