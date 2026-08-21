@@ -1,7 +1,7 @@
 import type { MovementIntent } from '$lib/game/input/movement-controller'
 import type { AvatarDirection, AvatarMotionState, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
 
-const SPEED_PX_PER_SECOND = 160
+const SPEED_PX_PER_SECOND = 200
 
 const DIRECTION_VECTORS: Record<AvatarDirection, { x: number, y: number }> = {
   up: { x: 0, y: -1 },

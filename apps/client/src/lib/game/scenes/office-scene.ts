@@ -46,10 +46,40 @@ function avatarTextureKey(spriteType: AvatarSpriteType, segment: 'idle' | 'walk'
   return `${spriteType}-${segment}`
 }
 
+/**
+ * Fixed at native tile size (1 tile-px = 1 screen-px), matching Gather's approach: a fixed,
+ * comfortable zoom level rather than scaling to fit the screen — Gather's maps are simply
+ * authored large enough that panning (FR-006) is the norm, not an edge case. This test map
+ * (welcome.tmj) is smaller than that today, so it leaves empty margin on large screens; that's
+ * expected to resolve itself once the real map is built out larger, not something to compensate
+ * for here. User-controlled zoom (Gather has scroll-wheel zoom in/out) is a separate, not yet
+ * scoped feature — this is only the fixed base zoom.
+ */
+const CAMERA_ZOOM = 1
+
+/**
+ * Camera scroll for one axis, in world units. When the (zoom-adjusted) viewport is smaller than
+ * the map, follows the avatar centered, clamped so the camera never shows area outside the map
+ * (FR-006). When the viewport is *larger* than the map along this axis (e.g. a wide monitor and
+ * the current, smaller-than-typical office map), the whole map already fits — statically center
+ * it rather than panning within the slack space, which would otherwise bias the map toward
+ * whichever edge the avatar is nearest (not what "keep the avatar in view" should look like when
+ * the avatar, and everything else, is already always in view).
+ */
+function clampedCameraScroll(avatarPos: number, viewportSize: number, mapSize: number): number {
+  if (mapSize <= viewportSize) {
+    return (mapSize - viewportSize) / 2
+  }
+  const desired = avatarPos - viewportSize / 2
+  return Math.min(Math.max(desired, 0), mapSize - viewportSize)
+}
+
 export class OfficeScene extends Phaser.Scene {
   private readonly movementController = new MovementController()
   private avatar!: Avatar
   private avatarView!: Phaser.GameObjects.Sprite
+  private mapWidthPx = 0
+  private mapHeightPx = 0
 
   constructor() {
     super('office')
@@ -84,6 +114,10 @@ export class OfficeScene extends Phaser.Scene {
     for (const layerData of map.layers) {
       map.createLayer(layerData.name, map.tilesets, 0, 0)
     }
+
+    this.mapWidthPx = map.widthInPixels
+    this.mapHeightPx = map.heightInPixels
+    this.cameras.main.setZoom(CAMERA_ZOOM)
 
     for (const spriteType of AVATAR_SPRITE_TYPES) {
       for (const segment of AVATAR_MOTION_SEGMENTS) {
@@ -122,6 +156,10 @@ export class OfficeScene extends Phaser.Scene {
     if (this.avatarView.anims.currentAnim?.key !== animation.key) {
       this.avatarView.anims.play(animation.key)
     }
+
+    const camera = this.cameras.main
+    camera.scrollX = clampedCameraScroll(this.avatar.x, camera.width / camera.zoom, this.mapWidthPx)
+    camera.scrollY = clampedCameraScroll(this.avatar.y, camera.height / camera.zoom, this.mapHeightPx)
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
