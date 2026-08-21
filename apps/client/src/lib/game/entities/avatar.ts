@@ -11,6 +11,35 @@ const DIRECTION_VECTORS: Record<AvatarDirection, { x: number, y: number }> = {
 }
 
 /**
+ * The purchased character sheets (`avatar-{man,woman}-{idle,walk}.png`, 768×64px, 32px-wide
+ * frames — a character-builder export from itch.io) pack all four directions into one row, six
+ * frames each, in **right, up, left, down** order (confirmed by the asset's owner — no
+ * accompanying frame documentation ships with it).
+ */
+export const AVATAR_FRAME_RANGES: Record<AvatarDirection, { start: number, end: number }> = {
+  right: { start: 0, end: 5 },
+  up: { start: 6, end: 11 },
+  left: { start: 12, end: 17 },
+  down: { start: 18, end: 23 },
+}
+
+const MOTION_STATE_SEGMENT: Record<AvatarMotionState, 'idle' | 'walk'> = {
+  idle: 'idle',
+  walking: 'walk',
+}
+
+export interface SpriteAnimation {
+  /** Matches the Phaser animation key OfficeScene creates from AVATAR_FRAME_RANGES. */
+  key: string
+}
+
+export function getSpriteAnimation(spriteType: AvatarSpriteType, motionState: AvatarMotionState, direction: AvatarDirection): SpriteAnimation {
+  return {
+    key: `${spriteType}-${MOTION_STATE_SEGMENT[motionState]}-${direction}`,
+  }
+}
+
+/**
  * Pure position/state logic, decoupled from Phaser rendering (research.md's testability
  * approach) — OfficeScene owns the visual representation and reads `getState()` each frame to
  * sync it. No obstacle collision yet (tasks.md T013 known gap): position updates unconditionally
