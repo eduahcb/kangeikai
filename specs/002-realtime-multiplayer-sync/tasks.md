@@ -113,16 +113,23 @@ appearance; disconnect it and confirm disappearance (spec.md SC-002).
 
 ### Tests for User Story 2
 
-- [ ] T016 [P] [US2] Integration test: joining broadcasts a new avatar to already-connected
+- [X] T016 [P] [US2] Integration test: joining broadcasts a new avatar to already-connected
       clients, and a clean leave removes it, in
-      `apps/server/tests/integration/office-room.spec.ts` (depends on T012)
+      `apps/server/tests/integration/office-room.spec.ts` (depends on T012). Uses a
+      predicate-polling `waitFor` helper rather than a single `onStateChange.once()` — the
+      join/leave patch isn't guaranteed to be the very next state change observed (e.g. a
+      client's own initial full-state sync can land first), so `.once()` could resolve before
+      the awaited change actually arrived.
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Implement `OfficeRoom.onLeave`'s clean-leave path: remove the session from
+- [X] T017 [US2] Implement `OfficeRoom.onLeave`'s clean-leave path: remove the session from
       `players` in `apps/server/src/rooms/office-room.ts` (depends on T012)
-- [ ] T018 [US2] Handle remote-avatar removal in `OfficeScene` when a player leaves the synced
-      state, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T015)
+- [X] T018 [US2] Handle remote-avatar removal in `OfficeScene` when a player leaves the synced
+      state, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T015). Already
+      implemented as part of T015 — `RoomConnection`'s `players.onRemove` binding and
+      `OfficeScene`'s `onRemoteAvatarRemove`/`removeRemoteAvatar` wiring were built
+      generically in Phase 3, not scoped to only the reconnection case.
 
 **Checkpoint**: User Stories 1 and 2 both work independently — full presence awareness.
 

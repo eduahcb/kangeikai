@@ -44,4 +44,8 @@ export class OfficeRoom extends Room<{ state: OfficeRoomState }> {
 
     this.state.players.set(client.sessionId, avatar)
   }
+
+  onLeave(client: Client): void {
+    this.state.players.delete(client.sessionId)
+  }
 }
