@@ -30,6 +30,8 @@ across the walkable area.
    is released.
 2. **Given** the avatar is moving toward a wall or obstacle defined by the map, **When** it
    reaches that boundary, **Then** the avatar stops at the boundary and does not pass through it.
+   [DEFERRED past MVP — see FR-004 and Assumptions: the avatar currently moves freely through
+   every obstacle; this scenario isn't satisfied until a future wave]
 3. **Given** no key is being pressed, **When** the user takes no action, **Then** the avatar
    remains stationary in place.
 
@@ -99,8 +101,8 @@ visible viewport scrolls to follow it, stopping appropriately at the map's outer
 - **FR-002**: System MUST render the local user as a 2D avatar positioned on the map.
 - **FR-003**: Users MUST be able to move their avatar in at least four directions (up, down,
   left, right) using keyboard input.
-- **FR-004**: System MUST prevent the avatar from moving through areas of the map marked as
-  walls/obstacles.
+- **FR-004** *(deferred past MVP — see Assumptions)*: System MUST prevent the avatar from moving
+  through areas of the map marked as walls/obstacles.
 - **FR-005**: System MUST visually reflect the avatar's current facing direction and motion
   state (idle vs. walking).
 - **FR-006**: System MUST keep the avatar within the visible viewport as it moves around a map
@@ -134,13 +136,13 @@ visible viewport scrolls to follow it, stopping appropriately at the map's outer
 
 ### Measurable Outcomes
 
-- **SC-001**: A user can traverse the entire walkable area of the map from any starting point
-  without the avatar passing through a defined obstacle or getting visually stuck outside the
-  intended boundaries.
+- **SC-001** *(deferred past MVP — see Assumptions)*: A user can traverse the entire walkable
+  area of the map from any starting point without the avatar passing through a defined obstacle
+  or getting visually stuck outside the intended boundaries.
 - **SC-002**: On-screen avatar movement visibly responds to a keypress with no perceptible
   input lag for the local player.
-- **SC-003**: 100% of obstacle areas defined in the map data correctly block avatar movement
-  when tested by walking into every obstacle on the map.
+- **SC-003** *(deferred past MVP — see Assumptions)*: 100% of obstacle areas defined in the map
+  data correctly block avatar movement when tested by walking into every obstacle on the map.
 - **SC-004**: The avatar remains visible within the viewport at all times while moving across
   the full extent of the map.
 
@@ -155,3 +157,8 @@ visible viewport scrolls to follow it, stopping appropriately at the map's outer
 - The map is authored ahead of time as a fixed, versioned asset shipped with the application.
 - This feature covers only the local user's avatar rendering/movement; synchronizing multiple
   people's avatars in real time is covered by a separate realtime multiplayer sync feature.
+- **Obstacle collision (FR-004, SC-001, SC-003, Story 1 Acceptance Scenario 2) is explicitly
+  deferred past the MVP**, by product decision recorded in `docs/mvp-plan.md`'s "Fora do MVP"
+  list. The MVP ships with the avatar moving freely through every obstacle on the map; blocking
+  movement at walls/furniture lands in a later wave, once the map also has a collision layer
+  authored in Tiled (it doesn't yet — see `data-model.md`'s `MapDefinition.collisionLayer`).

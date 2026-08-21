@@ -109,7 +109,8 @@ apps/
     │           │   └── welcome/
     │           │       ├── welcome.tmj              # Tiled map export (zones, ground, room groups)
     │           │       ├── Room_Builder_32x32.png    # Embedded-tileset source images
-    │           │       ├── Interiors_32x32.png
+    │           │       ├── Interiors_32x32-used.png  # Repacked crop (see tasks.md T013) —
+    │           │       │                              # the original 512x34048px sheet is gone
     │           │       ├── Modern_Office_32x32.png
     │           │       └── Room_Builder_Office_32x32.png
     │           └── sprites/

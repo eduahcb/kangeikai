@@ -21,10 +21,12 @@
    - Expected: the avatar moves continuously in the held direction; stops when the key is
      released (spec.md Acceptance Scenario 1/3).
 
-3. **Collide with an obstacle (Story 1, FR-004, SC-003)**
-   - Walk the avatar into every obstacle area defined on the map.
-   - Expected: the avatar stops at the obstacle boundary in every case; it never overlaps
-     or passes through.
+3. **Collide with an obstacle (Story 1, FR-004, SC-003)** — **deferred past the MVP**, see
+   spec.md's Assumptions. Skip this scenario for now; the avatar currently passes through every
+   obstacle by design.
+   - ~~Walk the avatar into every obstacle area defined on the map.~~
+   - ~~Expected: the avatar stops at the obstacle boundary in every case; it never overlaps
+     or passes through.~~
 
 4. **Direction + animation feedback (Story 2, FR-005)**
    - Move in each direction, then stop.

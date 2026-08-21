@@ -42,6 +42,9 @@ during implementation**; read it before making a scope or stack decision.
 - No user accounts or server-persisted identity — guests only, name/avatar choice lives in
   `localStorage`.
 - No database — Colyseus room state is in-memory and resets on server restart.
+- Cross-package/module imports always use SvelteKit's `$lib` alias with an absolute path from
+  `src/lib` — never a relative `../` import — including in test files (see `vitest.config.ts`'s
+  `sveltekit()` plugin, needed for the alias to resolve there too).
 
 ## Workflow
 

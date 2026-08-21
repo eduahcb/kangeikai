@@ -1,4 +1,5 @@
 <script lang='ts'>
+  import { OfficeScene } from '$lib/game/scenes/office-scene'
   import Phaser from 'phaser'
   import { onDestroy, onMount } from 'svelte'
 
@@ -11,7 +12,7 @@
       parent: gameContainer,
       width: window.innerWidth,
       height: window.innerHeight,
-      scene: [],
+      scene: [OfficeScene],
     })
   })
 

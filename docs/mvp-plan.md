@@ -32,6 +32,9 @@ Caso de uso primário: **virtual office** (presença assíncrona de time/comunid
 - Empacotamento genérico para self-host de terceiros (Docker Compose documentado, guia de instalação).
 - Chat de texto.
 - Customização avançada de avatar.
+- Colisão do avatar com obstáculos do mapa (bloquear movimento em paredes/móveis) — o MVP libera
+  o avatar andar livremente por cima de tudo; entra numa wave seguinte, junto com a layer de
+  colisão correspondente no `welcome.tmj` (ainda não existe).
 
 ## Stack técnica
 
