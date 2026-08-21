@@ -76,9 +76,27 @@ runs cleanly, and committing a staged file with a lint error is blocked by the p
       `MapDefinition.collisionLayer` doesn't exist on this map) — the avatar will pass through
       everything until one is authored. Must be resolved before T021 (Phase 3, where collision
       is actually wired). The five tileset entries in `welcome.tmj` are now all embedded
-      (`image`, not `source`); note two entries share the name `Room_Builder_32x32` (same image,
-      two gid ranges) — worth a quick empirical check in T020 that Phaser's
-      `map.addTilesetImage()` name-matching handles both correctly.
+      (`image`, not `source`); two entries share the name `Room_Builder_32x32` (same image, two
+      gid ranges) — T020 works around `addTilesetImage()`'s name-matching only binding the first
+      match by setting every tileset's image directly (`tileset.setImage(...)`, keyed by name,
+      for each entry in `map.tilesets`). **Resolved during T020**: `Interiors_32x32.png` was
+      512×34048px — a single dimension that exceeds WebGL's max texture size on effectively all
+      hardware, so the whole texture failed to upload (`texImage2D: width or height out of
+      range`) and every tile from it rendered black. Only 70 of its 17,024 tiles were actually
+      used by the map, so it was repacked into `Interiors_32x32-used.png` (512×160px, 16×5 grid)
+      containing just those tiles, and `welcome.tmj`'s `Interiors_32x32` tileset entry plus every
+      tile layer's gid data were remapped to point at it — this final remap is what's checked in
+      today; `Interiors_32x32.png` (the oversized original) is no longer present in the repo.
+      **This is a re-export hazard**: Tiled has no knowledge of the repack, so re-exporting
+      `welcome.tmj` from Tiled again would reset the tileset entry back to referencing the
+      (now-deleted) oversized original and undo the gid remap — confirmed happening twice during
+      this task (once from a genuine Tiled re-export, once from re-running the fix script against
+      its own already-repacked output by mistake). By explicit decision, no more Tiled re-exports
+      of this map are planned, so the one-off Node repack script used to produce today's checked-
+      in state was deleted rather than kept around — if `welcome.tmj` ever needs to be
+      re-exported from Tiled after all, this exact problem (and fix approach: identify which
+      tiles are actually used from the oversized source, repack just those into a compact sheet,
+      remap gids) will need to be redone from scratch.
 - [X] T014 [P] Add avatar sprite sheets at
       `apps/client/src/lib/assets/sprites/avatar-{man,woman}-{idle,walk}.png` (real character
       art, 768×64px each — idle and walk shipped as separate sheets per `spriteType`, renamed to
@@ -105,28 +123,43 @@ keyboard movement works and is blocked by every obstacle on the map (spec.md SC-
 
 ### Tests for User Story 1
 
-- [ ] T016 [P] [US1] Unit test: opposing directional keys resolve to a single consistent
+- [X] T016 [P] [US1] Unit test: opposing directional keys resolve to a single consistent
       direction (FR-008) in `apps/client/tests/unit/movement-controller.spec.ts`
-- [ ] T017 [P] [US1] Unit test: movement stops when input focus is lost (FR-009) in
+- [X] T017 [P] [US1] Unit test: movement stops when input focus is lost (FR-009) in
       `apps/client/tests/unit/movement-controller.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Implement `MovementController` (keyboard input → movement intent, opposing-
+- [X] T018 [US1] Implement `MovementController` (keyboard input → movement intent, opposing-
       key resolution, focus-loss handling) in
-      `apps/client/src/lib/game/input/movement-controller.ts` (depends on T015)
-- [ ] T019 [US1] Implement the `Avatar` entity (position, applies movement intent, exposes
-      `AvatarState`) in `apps/client/src/lib/game/entities/avatar.ts` (depends on T012, T015)
-- [ ] T020 [US1] Implement `OfficeScene`: load the Tiled map + collision layer, spawn the
+      `apps/client/src/lib/game/input/movement-controller.ts` (depends on T015). Direction
+      resolution is press-order based: the most recently pressed still-held direction wins.
+- [X] T019 [US1] Implement the `Avatar` entity (position, applies movement intent, exposes
+      `AvatarState`) in `apps/client/src/lib/game/entities/avatar.ts` (depends on T012, T015).
+      Pure state/logic, no Phaser dependency (research.md's testability approach); `OfficeScene`
+      owns the visual representation (currently a plain blue rectangle — real sprite rendering
+      is T023, Phase 4) and syncs it from `Avatar.getState()` each frame.
+- [X] T020 [US1] Implement `OfficeScene`: load the Tiled map + collision layer, spawn the
       local `Avatar` at a valid position in
-      `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T013, T019)
-- [ ] T021 [US1] Wire collision between the `Avatar` and the map's collision layer in
-      `office-scene.ts` so obstacles block movement (FR-004) (depends on T020)
-- [ ] T022 [US1] Wire `MovementController` into `OfficeScene`'s update loop so keyboard input
-      drives the `Avatar` (depends on T018, T020)
+      `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T013, T019). Spawn point
+      (150, 150) is a placeholder chosen outside every zone's bounding box, not yet validated
+      against real walkable/collision data (blocked on T021). Along the way, fixed two real
+      Phaser/Tiled integration bugs uncovered empirically (browser testing, not caught by
+      lint/build/type-check) — both detailed in T013's notes: the `Room_Builder_32x32`
+      duplicate-tileset-name issue, and the `Interiors_32x32` oversized-texture issue.
+- [ ] T021 [US1] **Deferred past the MVP** (product decision, see `docs/mvp-plan.md`'s "Fora do
+      MVP" list and `spec.md`'s Assumptions — FR-004/SC-001/SC-003 marked deferred there too).
+      Originally: wire collision between the `Avatar` and the map's collision layer in
+      `office-scene.ts` so obstacles block movement (FR-004) (depends on T020). Not picked up
+      until a later wave, once a collision layer is authored in Tiled (still doesn't exist).
+- [X] T022 [US1] Wire `MovementController` into `OfficeScene`'s update loop so keyboard input
+      drives the `Avatar` (depends on T018, T020). Arrow keys and WASD both map to the four
+      directions; `Phaser.Core.Events.BLUR` clears the controller on focus loss.
 
-**Checkpoint**: User Story 1 fully functional and independently testable — this alone is a
-demonstrable slice ("I can walk around the office").
+**Checkpoint**: User Story 1 functional and independently testable for everything except
+obstacle collision (T021, deferred past the MVP by product decision) — avatar renders, moves in
+four directions, animates start/stop correctly; it currently passes through every obstacle. This
+is a demonstrable slice ("I can walk around the office, collision comes later").
 
 ---
 
