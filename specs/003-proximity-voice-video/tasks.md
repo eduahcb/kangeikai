@@ -229,3 +229,25 @@ Task: "Add the valibot dependency to apps/server/package.json"
 - Suggested MVP scope: Phase 3 (User Story 1) only, on top of features 001–002
 - All tasks above follow the required `- [ ] [ID] [P?] [Story?] Description with file path`
   format
+
+---
+
+## Phase 7: Convergence
+
+Found by `/speckit-converge` after implementing Phases 1–3: `ProximityAudioController` (T009,
+T011–T013) is fully implemented but never instantiated, connected, or driven from anywhere in
+`apps/client` — no call site exists outside `proximity-audio-controller.ts` itself, so US1's
+independent test (spec.md acceptance scenarios 1–3) cannot actually be exercised end-to-end.
+This blocks the Phase 3 checkpoint's claim of being "fully functional and independently
+testable."
+
+- [ ] T022 [US1] Expose `RoomConnection`'s local Colyseus `sessionId` (needed as the LiveKit
+      `identity`, per `contracts/livekit-token-endpoint.md`'s Stability section, and to key
+      remote-position lookups) in `apps/client/src/lib/network/room-connection.ts` per
+      US1/AC1-3 (missing)
+- [ ] T023 [US1] Wire `ProximityAudioController` into `OfficeScene`: instantiate it once the
+      local avatar has a synced position (FR-008), call `connect()` with the local `sessionId`/
+      display name and position, then call `update()` every frame with the local avatar's
+      position and a `sessionId → position` map built from the scene's already-tracked remote
+      avatars, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T022) per
+      US1/AC1-3, Phase 3 checkpoint (missing)

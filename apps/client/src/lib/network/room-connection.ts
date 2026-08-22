@@ -88,6 +88,15 @@ export class RoomConnection {
     this.client = new Client(serverUrl)
   }
 
+  /**
+   * The local participant's Colyseus session id, once connected — MUST be used as the
+   * LiveKit `identity` when requesting a proximity token (contracts/livekit-token-endpoint.md
+   * "Stability" section, spec 003).
+   */
+  get sessionId(): string | undefined {
+    return this.room?.sessionId
+  }
+
   onConnectionStateChange(listener: ConnectionStateListener): () => void {
     this.connectionListeners.add(listener)
     return () => this.connectionListeners.delete(listener)
