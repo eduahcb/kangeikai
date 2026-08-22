@@ -144,15 +144,23 @@ not empty (spec.md Acceptance Scenario for Story 3).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T014 [P] Unit test `GuestProfileStore` falls back to "no stored profile" behavior when
+- [X] T014 [P] Unit test `GuestProfileStore` falls back to "no stored profile" behavior when
       `localStorage.getItem`/`setItem` throws or is absent (FR-007), in
-      `apps/client/tests/unit/guest-profile-store.spec.ts`
-- [ ] T015 [P] Unit test `GuestProfileStore` falls back to a valid `avatarType` while
+      `apps/client/tests/unit/guest-profile-store.spec.ts`. Already landed alongside T009
+      (Phase 4) — the "returns null when nothing is stored" and both "...throws (FR-007)"
+      tests.
+- [X] T015 [P] Unit test `GuestProfileStore` falls back to a valid `avatarType` while
       preserving an otherwise-valid stored `displayName` (FR-008, exercising
       `guestProfileSchema`'s per-field `v.fallback()`), in
-      `apps/client/tests/unit/guest-profile-store.spec.ts`
-- [ ] T016 Run `quickstart.md` validation scenarios end-to-end manually, including the
-      corrupted-storage and storage-unavailable edge cases
+      `apps/client/tests/unit/guest-profile-store.spec.ts`. Seeds a corrupted `avatarType`
+      directly via `localStorage.setItem()` (bypassing `save()`, which would validate first)
+      to simulate externally-corrupted storage.
+- [X] T016 Run `quickstart.md` validation scenarios end-to-end manually, including the
+      corrupted-storage and storage-unavailable edge cases. Scenarios 1-5 were already
+      manually validated across Phases 3-5; this pass covered the remaining edge cases
+      (6: corrupted `avatarType` via devtools, 7: `localStorage` throwing via a
+      `defineProperty` override, 8: an overlong name clamping) — all confirmed working by the
+      user.
 
 ---
 

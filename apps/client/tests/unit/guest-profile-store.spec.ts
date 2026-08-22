@@ -1,4 +1,5 @@
 import type { GuestProfile } from '$lib/entry/guest-profile-schema'
+import { GUEST_PROFILE_STORAGE_KEY } from '$lib/entry/constants'
 import { GuestProfileStore } from '$lib/entry/guest-profile-store'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -63,5 +64,11 @@ describe('guestProfileStore', () => {
     })
 
     expect(() => new GuestProfileStore().save({ displayName: 'Eduardo', avatarType: 'man' })).not.toThrow()
+  })
+
+  it('falls back to a valid avatarType while preserving a valid stored displayName (FR-008)', () => {
+    localStorage.setItem(GUEST_PROFILE_STORAGE_KEY, JSON.stringify({ displayName: 'Eduardo', avatarType: 'robot' }))
+
+    expect(new GuestProfileStore().load()).toEqual({ displayName: 'Eduardo', avatarType: 'man' })
   })
 })
