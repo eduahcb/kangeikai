@@ -8,9 +8,11 @@ const DEFAULT_TOKEN_ENDPOINT = 'http://localhost:2567/livekit-token'
 
 /**
  * Fixed hearing-range threshold in map pixels (spec.md Assumptions: tuned during
- * implementation, not user-configurable in the MVP) — ~6 tiles at feature 001's 32px tiles.
+ * implementation, not user-configurable in the MVP) — ~2.5 tiles at feature 001's 32px tiles,
+ * tightened from an initial 200px (~6 tiles) so proximity only activates when avatars are
+ * genuinely close, not room-wide.
  */
-const HEARING_RANGE_PX = 200
+const HEARING_RANGE_PX = 80
 
 export type AvatarPosition = Pick<AvatarState, 'x' | 'y'>
 
