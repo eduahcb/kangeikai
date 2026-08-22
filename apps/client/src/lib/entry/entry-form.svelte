@@ -8,11 +8,19 @@
   import { GuestProfileStore } from './guest-profile-store'
 
   interface Props {
-    /** Called with the validated profile once the person confirms (FR-009). */
-    onConfirm: (profile: GuestProfile) => void
+    /**
+     * Called with the validated profile and the (possibly empty) access code once the person
+     * confirms (FR-009) — the server decides whether the code is actually required.
+     */
+    onConfirm: (profile: GuestProfile, accessCode: string) => void
+    /**
+     * Set by the parent when a previous attempt's room join was rejected (e.g. wrong access
+     * code) — cleared as soon as the person edits the code again.
+     */
+    joinError?: string
   }
 
-  const { onConfirm }: Props = $props()
+  const { onConfirm, joinError }: Props = $props()
 
   // Read once at component creation — pre-fills a returning visitor's previous choice (FR-005,
   // US2), or a friendly generated name for a first-time visitor (FR-006, US3) when nothing is
@@ -21,6 +29,8 @@
 
   let name = $state(storedProfile?.displayName ?? generateDefaultName())
   let avatarType = $state<AvatarSpriteType>(storedProfile?.avatarType ?? 'man')
+  // Never persisted — it's a shared room lock, not part of the guest's identity/appearance.
+  let accessCode = $state('')
   let error = $state<string | undefined>()
 
   function handleSubmit(event: SubmitEvent): void {
@@ -38,7 +48,7 @@
     }
 
     error = undefined
-    onConfirm({ displayName: nameResult.output, avatarType: avatarResult.output })
+    onConfirm({ displayName: nameResult.output, avatarType: avatarResult.output }, accessCode)
   }
 </script>
 
@@ -68,8 +78,19 @@
       </label>
     </fieldset>
 
+    <label for='entry-access-code'>Access code (if you have one)</label>
+    <input
+      id='entry-access-code'
+      type='password'
+      autocomplete='off'
+      bind:value={accessCode}
+      oninput={() => (error = undefined)}
+    />
+
     {#if error}
       <p class='error'>{error}</p>
+    {:else if joinError}
+      <p class='error'>{joinError}</p>
     {/if}
 
     <button type='submit'>Enter</button>

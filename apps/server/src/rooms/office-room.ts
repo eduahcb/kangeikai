@@ -1,4 +1,5 @@
 import type { Client } from 'colyseus'
+import process from 'node:process'
 import { CloseCode, Room } from 'colyseus'
 import * as v from 'valibot'
 import { computeSessionProof } from '../session-proof'
@@ -36,6 +37,23 @@ export class OfficeRoom extends Room<{ state: OfficeRoomState }> {
       avatar.direction = result.output.direction
       avatar.motionState = result.output.motionState
     })
+  }
+
+  /**
+   * A simple shared-secret gate (not per-user auth) — kept out of `onJoin` because a rejection
+   * here happens before a session/avatar is ever created, blocking movement, presence, AND
+   * proximity audio/video in one place (the latter two depend on a real `onJoin` having
+   * happened at all — see session-proof.ts). Only enforced when `ACCESS_CODE` is actually set,
+   * so local dev needs no code configured.
+   */
+  onAuth(_client: Client, options: unknown): boolean {
+    const accessCode = process.env.ACCESS_CODE
+    if (!accessCode) {
+      return true
+    }
+
+    const result = v.safeParse(officeJoinOptionsSchema, options)
+    return result.success && result.output.accessCode === accessCode
   }
 
   onJoin(client: Client, options: unknown): void {
