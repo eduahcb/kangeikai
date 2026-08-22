@@ -3,12 +3,15 @@
   import type { GuestProfile } from '$lib/entry/guest-profile-schema'
   import AvatarVideoOverlay from '$lib/av/avatar-video-overlay.svelte'
   import EntryForm from '$lib/entry/entry-form.svelte'
+  import { GuestProfileStore } from '$lib/entry/guest-profile-store'
   import { MEDIA_CONTROLS_READY_EVENT, OfficeScene } from '$lib/game/scenes/office-scene'
   import Phaser from 'phaser'
   import { onDestroy } from 'svelte'
 
   let gameContainer: HTMLDivElement
   let game: Phaser.Game | undefined
+
+  const guestProfileStore = new GuestProfileStore()
 
   let guestProfile: GuestProfile | undefined = $state()
   let mediaControls: MediaControls | undefined = $state()
@@ -19,6 +22,7 @@
 
   /** Mounts the game only once entry is confirmed (FR-009) — see `EntryForm` below. */
   function handleEntryConfirm(profile: GuestProfile): void {
+    guestProfileStore.save(profile)
     guestProfile = profile
 
     game = new Phaser.Game({

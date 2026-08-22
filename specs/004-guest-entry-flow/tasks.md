@@ -103,15 +103,19 @@ with the same choice (spec.md SC-002).
 
 ### Tests for User Story 2
 
-- [ ] T009 [P] [US2] Unit test `GuestProfileStore.save()`/`load()` round-trip via a mocked
-      `localStorage`, in `apps/client/tests/unit/guest-profile-store.spec.ts` (depends on T005)
-
-### Implementation for User Story 2
-
-- [ ] T010 [US2] Pre-fill `EntryForm` from `GuestProfileStore.load()` on mount (depends on
-      T005, T007)
-- [ ] T011 [US2] Call `GuestProfileStore.save()` on successful confirm, replacing any prior
-      stored profile (depends on T005, T008)
+- [X] T009 [P] [US2] Unit test `GuestProfileStore.save()`/`load()` round-trip via a mocked
+      `localStorage`, in `apps/client/tests/unit/guest-profile-store.spec.ts` (depends on T005).
+      Also covers FR-007 (`load()`/`save()` degrade gracefully when `localStorage` throws) via
+      `vi.stubGlobal`.
+- [X] T010 [US2] Pre-fill `EntryForm` from `GuestProfileStore.load()` on mount (depends on
+      T005, T007). Reads once at component creation (`entry-form.svelte`'s own
+      `new GuestProfileStore().load()`), not passed down from `+page.svelte` — matches
+      research.md's framing of `entry-form.svelte` owning its own default-value sourcing.
+- [X] T011 [US2] Call `GuestProfileStore.save()` on successful confirm, replacing any prior
+      stored profile (depends on T005, T008). Lives in `+page.svelte`'s `handleEntryConfirm`
+      (a single shared `GuestProfileStore` instance), alongside the existing FR-009 handoff —
+      a single JSON blob under one key means "replacing" is just calling `save()` again, no
+      extra logic needed.
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
