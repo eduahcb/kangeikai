@@ -130,12 +130,12 @@ not empty (spec.md Acceptance Scenario for Story 3).
 
 ### Tests for User Story 3
 
-- [ ] T012 [P] [US3] Unit test `generateDefaultName()` always returns a non-blank string, in
+- [X] T012 [P] [US3] Unit test `generateDefaultName()` always returns a non-blank string, in
       `apps/client/tests/unit/default-name.spec.ts` (depends on T004)
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Use `generateDefaultName()` to pre-fill `EntryForm`'s name field when
+- [X] T013 [US3] Use `generateDefaultName()` to pre-fill `EntryForm`'s name field when
       `GuestProfileStore.load()` returns no stored profile (depends on T004, T010)
 
 **Checkpoint**: All three user stories independently functional.
