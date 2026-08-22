@@ -1,5 +1,6 @@
 import type { AvatarPosition } from '$lib/av/proximity-audio-controller'
 import type { AvatarDirection, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
+import type { RemoteVideoTrack } from 'livekit-client'
 import interiorsUrl from '$lib/assets/maps/welcome/Interiors_32x32-used.png?url'
 import modernOfficeUrl from '$lib/assets/maps/welcome/Modern_Office_32x32.png?url'
 import roomBuilderUrl from '$lib/assets/maps/welcome/Room_Builder_32x32.png?url'
@@ -9,11 +10,17 @@ import avatarManIdleUrl from '$lib/assets/sprites/avatar-man-idle.png?url'
 import avatarManWalkUrl from '$lib/assets/sprites/avatar-man-walk.png?url'
 import avatarWomanIdleUrl from '$lib/assets/sprites/avatar-woman-idle.png?url'
 import avatarWomanWalkUrl from '$lib/assets/sprites/avatar-woman-walk.png?url'
+import { MediaControls } from '$lib/av/media-controls'
 import { ProximityAudioController } from '$lib/av/proximity-audio-controller'
+import { videoOverlayState } from '$lib/av/video-overlay-state.svelte'
 import { Avatar, AVATAR_FRAME_RANGES, getSpriteAnimation } from '$lib/game/entities/avatar'
 import { MovementController } from '$lib/game/input/movement-controller'
 import { RoomConnection } from '$lib/network/room-connection'
+import { Track } from 'livekit-client'
 import Phaser from 'phaser'
+
+/** Emitted on `game.events` once `MediaControls` is ready (T017 — see +page.svelte). */
+export const MEDIA_CONTROLS_READY_EVENT = 'mediacontrols-ready'
 
 /**
  * Placeholder spawn point, chosen outside every zone's bounding box in welcome.tmj as of
@@ -180,6 +187,7 @@ export class OfficeScene extends Phaser.Scene {
       this.game.events.off(Phaser.Core.Events.BLUR, this.handleBlur, this)
       this.roomConnection.disconnect()
       this.proximityAudioController.disconnect()
+      videoOverlayState.set([])
     })
   }
 
@@ -199,6 +207,17 @@ export class OfficeScene extends Phaser.Scene {
     // (guest entry flow) will replace this with the guest's actual chosen display name.
     this.proximityAudioController
       .connect({ identity: sessionId, name: 'Guest' }, { x: this.avatar.x, y: this.avatar.y })
+      .then(() => {
+        const mediaControls = new MediaControls(this.proximityAudioController.liveKitRoom)
+        this.game.events.emit(MEDIA_CONTROLS_READY_EVENT, mediaControls)
+
+        // Mic defaults to on (matches US1's "just works" proximity-audio premise); camera
+        // defaults to off and is opt-in via MediaControls' UI (T017). Permission-denied/no-
+        // device handling (US3, T018) lands in a later phase — this is a best-effort attempt.
+        mediaControls.setMicrophoneEnabled(true).catch((error: unknown) => {
+          console.warn('kangeikai: failed to enable microphone', error)
+        })
+      })
       .catch((error: unknown) => {
         console.warn('kangeikai: failed to connect proximity audio/video', error)
       })
@@ -224,7 +243,8 @@ export class OfficeScene extends Phaser.Scene {
       motionState: this.avatar.motionState,
     })
 
-    this.proximityAudioController.update({ x: this.avatar.x, y: this.avatar.y }, this.remoteAvatarPositions())
+    const nearbySessionIds = this.proximityAudioController.update({ x: this.avatar.x, y: this.avatar.y }, this.remoteAvatarPositions())
+    this.updateVideoOverlay(nearbySessionIds)
   }
 
   private remoteAvatarPositions(): ReadonlyMap<string, AvatarPosition> {
@@ -233,6 +253,39 @@ export class OfficeScene extends Phaser.Scene {
       positions.set(sessionId, { x: entry.avatar.x, y: entry.avatar.y })
     }
     return positions
+  }
+
+  /**
+   * Refreshes `videoOverlayState` (T015/T016) for every nearby ("close enough to hear",
+   * ProximityAudioController.update()'s return value — same condition per spec.md's US2
+   * acceptance scenarios) remote participant: their avatar's current screen-space position,
+   * camera/mic state, and video track (if publishing).
+   */
+  private updateVideoOverlay(nearbySessionIds: ReadonlySet<string>): void {
+    const camera = this.cameras.main
+    const room = this.proximityAudioController.liveKitRoom
+
+    const tiles = []
+    for (const sessionId of nearbySessionIds) {
+      const entry = this.remoteAvatars.get(sessionId)
+      const participant = room.remoteParticipants.get(sessionId)
+      if (!entry || !participant) {
+        continue
+      }
+
+      const videoTrack = participant.getTrackPublication(Track.Source.Camera)?.track as RemoteVideoTrack | undefined
+
+      tiles.push({
+        sessionId,
+        screenX: (entry.avatar.x - camera.scrollX) * camera.zoom,
+        screenY: (entry.avatar.y - camera.scrollY) * camera.zoom,
+        cameraEnabled: participant.isCameraEnabled,
+        micEnabled: participant.isMicrophoneEnabled,
+        videoTrack,
+      })
+    }
+
+    videoOverlayState.set(tiles)
   }
 
   private spawnRemoteAvatar(sessionId: string, state: AvatarState): void {

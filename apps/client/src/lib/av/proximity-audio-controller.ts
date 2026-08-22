@@ -46,6 +46,11 @@ export class ProximityAudioController {
     this.zones = zones
   }
 
+  /** The underlying LiveKit room, for `MediaControls`/video-overlay callers (US2). */
+  get liveKitRoom(): Room {
+    return this.room
+  }
+
   /**
    * `_localPosition` exists only to make FR-008 a compile-time precondition — there is no
    * way to call this before the local avatar has a valid position. `update()` takes the
@@ -66,9 +71,15 @@ export class ProximityAudioController {
    * microphone volume to full when they share zone membership with the local avatar
    * (FR-011), otherwise to `proximityVolume` of the distance between them (FR-002/FR-003,
    * FR-012) — data-model.md's `ProximityRelationship.volume` rule.
+   *
+   * Returns the set of remote `identity`s that are currently audible (volume > 0) — "close
+   * enough to hear" is also the video-visibility/muted-indicator condition for US2 (spec.md
+   * acceptance scenarios), so callers reuse this instead of recomputing distance/zone
+   * themselves.
    */
-  update(localPosition: AvatarPosition, remotePositions: ReadonlyMap<string, AvatarPosition>): void {
+  update(localPosition: AvatarPosition, remotePositions: ReadonlyMap<string, AvatarPosition>): ReadonlySet<string> {
     const localZone = zoneAt(this.zones, localPosition.x, localPosition.y)
+    const nearby = new Set<string>()
 
     for (const [identity, participant] of this.room.remoteParticipants) {
       const remotePosition = remotePositions.get(identity)
@@ -77,14 +88,17 @@ export class ProximityAudioController {
       }
 
       const sharedZone = localZone !== null && zoneAt(this.zones, remotePosition.x, remotePosition.y) === localZone
-      if (sharedZone) {
-        participant.setVolume(1)
-        continue
-      }
+      const volume = sharedZone
+        ? 1
+        : proximityVolume(Math.hypot(remotePosition.x - localPosition.x, remotePosition.y - localPosition.y), HEARING_RANGE_PX)
 
-      const distance = Math.hypot(remotePosition.x - localPosition.x, remotePosition.y - localPosition.y)
-      participant.setVolume(proximityVolume(distance, HEARING_RANGE_PX))
+      participant.setVolume(volume)
+      if (volume > 0) {
+        nearby.add(identity)
+      }
     }
+
+    return nearby
   }
 
   private async fetchToken(options: ProximityAudioControllerOptions): Promise<LiveKitTokenResponse> {
