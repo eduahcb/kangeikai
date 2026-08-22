@@ -34,22 +34,24 @@
       </div>
     {:else}
       <div class='tile' class:speaking={tile.speaking}>
-        {#if tile.cameraEnabled && tile.videoTrack}
-          <video
-            use:attachVideoTrack={tile.videoTrack}
-            autoplay
-            playsinline
-            muted={tile.isLocal}
-            class:mirrored={tile.isLocal}
-          ></video>
-        {:else}
-          <div class='placeholder'>
-            <span class='avatar-circle'>
-              {initial(tile.name)}
-              <span class='mic-dot' class:on={tile.micEnabled}></span>
-            </span>
-          </div>
-        {/if}
+        <div class='tile-content'>
+          {#if tile.cameraEnabled && tile.videoTrack}
+            <video
+              use:attachVideoTrack={tile.videoTrack}
+              autoplay
+              playsinline
+              muted={tile.isLocal}
+              class:mirrored={tile.isLocal}
+            ></video>
+          {:else}
+            <div class='placeholder'>
+              <span class='avatar-circle'>
+                {initial(tile.name)}
+                <span class='mic-dot' class:on={tile.micEnabled}></span>
+              </span>
+            </div>
+          {/if}
+        </div>
         <span class='name-label'>{tile.isLocal ? 'You' : tile.name}</span>
       </div>
     {/if}
@@ -82,17 +84,28 @@
     min-width: 100px;
     aspect-ratio: 4 / 3;
     flex: 1 1 220px;
-    overflow: hidden;
     border-radius: 12px;
-    background: #000;
-    /* inset box-shadow instead of border — respects border-radius and doesn't shift layout. */
-    box-shadow: inset 0 0 0 2px transparent;
+    /*
+     * Outset (not inset) box-shadow, on this OUTER element rather than `.tile-content` — an
+     * inset shadow here would sit exactly where `.tile-content`'s opaque video/placeholder
+     * fills the same edge-to-edge box, hiding it completely. This element intentionally has no
+     * `overflow: hidden` of its own, so the outset ring isn't clipped either.
+     */
+    box-shadow: 0 0 0 2px transparent;
     transition: box-shadow 0.1s ease-out;
   }
 
   /* Gather-style speaking indicator, driven by LiveKit's built-in active-speaker detection. */
   .tile.speaking {
-    box-shadow: inset 0 0 0 2px #3b82f6;
+    box-shadow: 0 0 0 2px #3b82f6;
+  }
+
+  .tile-content {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
   }
 
   .tile video {
