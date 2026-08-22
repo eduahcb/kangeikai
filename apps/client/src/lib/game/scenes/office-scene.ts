@@ -31,6 +31,14 @@ export const MEDIA_CONTROLS_READY_EVENT = 'mediacontrols-ready'
 export const ROOM_JOIN_FAILED_EVENT = 'room-join-failed'
 
 /**
+ * Emitted on `game.events` once the Colyseus room join actually succeeds — `+page.svelte` uses
+ * this (rather than assuming success the instant the game is constructed) to know when it's
+ * safe to reveal the map, instead of it flashing visible during the connect attempt right
+ * before a possible rejection (`ROOM_JOIN_FAILED_EVENT`).
+ */
+export const ROOM_JOINED_EVENT = 'room-joined'
+
+/**
  * Placeholder spawn point, chosen outside every zone's bounding box in welcome.tmj as of
  * authoring time. The map has no collision layer yet (tasks.md T013 known gap), so this can't
  * be validated against walkable/collision data (data-model.md's spawn invariant) until T021 —
@@ -228,7 +236,10 @@ export class OfficeScene extends Phaser.Scene {
     this.roomConnection.onRemoteAvatarChange((sessionId, state) => this.updateRemoteAvatar(sessionId, state))
     this.roomConnection.onRemoteAvatarRemove(sessionId => this.removeRemoteAvatar(sessionId))
     this.roomConnection.connect({ spriteType: this.spriteType, accessCode: this.accessCode })
-      .then(() => this.connectProximityAudio())
+      .then(() => {
+        this.game.events.emit(ROOM_JOINED_EVENT)
+        this.connectProximityAudio()
+      })
       .catch((error: unknown) => {
         console.warn('kangeikai: failed to connect to the shared room', error)
         this.game.events.emit(ROOM_JOIN_FAILED_EVENT)

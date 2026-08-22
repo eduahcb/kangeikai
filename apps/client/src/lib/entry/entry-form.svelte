@@ -127,7 +127,8 @@
     font-size: 14px;
   }
 
-  input[type='text'] {
+  input[type='text'],
+  input[type='password'] {
     padding: 8px;
     border: 1px solid #4a4a4a;
     border-radius: 6px;
