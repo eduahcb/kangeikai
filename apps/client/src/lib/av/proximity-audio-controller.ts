@@ -2,7 +2,7 @@ import type { Zone } from '$lib/game/map/zone-lookup'
 import type { AvatarState } from '@kangeikai/shared'
 import { PUBLIC_LIVEKIT_TOKEN_ENDPOINT } from '$env/static/public'
 import { zoneAt } from '$lib/game/map/zone-lookup'
-import { Room } from 'livekit-client'
+import { Room, RoomEvent, Track } from 'livekit-client'
 import { proximityVolume } from './proximity-volume'
 
 /** Baked in at build time (adapter-static/SPA — no server to read this at runtime) — see .env.example. */
@@ -43,6 +43,23 @@ export class ProximityAudioController {
 
   constructor(tokenEndpoint: string = DEFAULT_TOKEN_ENDPOINT) {
     this.tokenEndpoint = tokenEndpoint
+
+    // Video tracks get attached to a <video> element by avatar-video-overlay.svelte, but
+    // nothing else in the app ever attaches a remote AUDIO track — livekit-client never plays
+    // a track until something calls .attach() on it, so without this, proximity volume
+    // (setVolume() below) was computing correctly but had no attached element to apply to,
+    // silently muting everyone. Audio has no visual surface, so it's attached here centrally
+    // instead of through the per-frame video-tile UI.
+    this.room.on(RoomEvent.TrackSubscribed, (track) => {
+      if (track.kind === Track.Kind.Audio) {
+        document.body.appendChild(track.attach())
+      }
+    })
+    this.room.on(RoomEvent.TrackUnsubscribed, (track) => {
+      if (track.kind === Track.Kind.Audio) {
+        track.detach().forEach(element => element.remove())
+      }
+    })
   }
 
   /** The map's named voice/video activation zones (feature 001's `zones` object layer). */
