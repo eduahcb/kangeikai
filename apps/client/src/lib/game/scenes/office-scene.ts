@@ -94,9 +94,24 @@ function clampedCameraScroll(avatarPos: number, viewportSize: number, mapSize: n
 }
 
 interface RemoteAvatarEntry {
+  /** `x`/`y` hold the latest raw position received over the network (the interpolation target). */
   avatar: Avatar
   view: Phaser.GameObjects.Sprite
+  /** Currently rendered position — eased toward `avatar.x/y` each frame, see `updateRemoteAvatarViews`. */
+  renderX: number
+  renderY: number
 }
+
+/**
+ * Exponential-smoothing time constant (seconds) for remote avatar rendering (T026): network
+ * updates land in discrete ~50ms steps (`room-connection.ts`'s `SEND_INTERVAL_MS`), but
+ * `view.setPosition` used to snap straight to each one, visibly "stepping" on other clients'
+ * screens. Easing the rendered position toward the latest received one each frame — instead of
+ * jumping to it — smooths that out; the local player is unaffected (fully client-predicted,
+ * see `update()`). Distance-based logic (proximity/zone/video ordering) still reads `avatar.x/y`
+ * directly, so it always sees the true, un-eased network position.
+ */
+const REMOTE_AVATAR_SMOOTHING_TAU_SECONDS = 0.08
 
 export class OfficeScene extends Phaser.Scene {
   private readonly movementController = new MovementController()
@@ -254,6 +269,23 @@ export class OfficeScene extends Phaser.Scene {
 
     const nearbySessionIds = this.proximityAudioController.update({ x: this.avatar.x, y: this.avatar.y }, this.remoteAvatarPositions())
     this.updateVideoOverlay(nearbySessionIds)
+
+    this.updateRemoteAvatarViews(delta / 1000)
+  }
+
+  /**
+   * Eases each remote avatar's rendered position toward its latest network-received
+   * `avatar.x/y` instead of snapping to it, smoothing the ~50ms-stepped updates into
+   * continuous motion (T026).
+   */
+  private updateRemoteAvatarViews(deltaSeconds: number): void {
+    const factor = 1 - Math.exp(-deltaSeconds / REMOTE_AVATAR_SMOOTHING_TAU_SECONDS)
+
+    for (const entry of this.remoteAvatars.values()) {
+      entry.renderX += (entry.avatar.x - entry.renderX) * factor
+      entry.renderY += (entry.avatar.y - entry.renderY) * factor
+      entry.view.setPosition(entry.renderX, entry.renderY)
+    }
   }
 
   private remoteAvatarPositions(): ReadonlyMap<string, AvatarPosition> {
@@ -337,7 +369,7 @@ export class OfficeScene extends Phaser.Scene {
     const view = this.add.sprite(avatar.x, avatar.y, avatarTextureKey(avatar.spriteType, 'idle'))
     view.anims.play(getSpriteAnimation(avatar.spriteType, avatar.motionState, avatar.direction).key)
 
-    this.remoteAvatars.set(sessionId, { avatar, view })
+    this.remoteAvatars.set(sessionId, { avatar, view, renderX: avatar.x, renderY: avatar.y })
   }
 
   private updateRemoteAvatar(sessionId: string, state: AvatarState): void {
@@ -347,11 +379,12 @@ export class OfficeScene extends Phaser.Scene {
       return
     }
 
+    // Only the interpolation target (avatar.x/y) moves here — the rendered `view` position is
+    // eased toward it every frame in `updateRemoteAvatarViews`, not snapped to it here.
     entry.avatar.x = state.x
     entry.avatar.y = state.y
     entry.avatar.direction = state.direction
     entry.avatar.motionState = state.motionState
-    entry.view.setPosition(state.x, state.y)
 
     const animation = getSpriteAnimation(state.spriteType, state.motionState, state.direction)
     if (entry.view.anims.currentAnim?.key !== animation.key) {
