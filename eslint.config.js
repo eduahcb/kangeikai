@@ -8,15 +8,12 @@ export default antfu(
     formatters: false,
   },
   {
-    // specs/, .specify/ and .claude/ hold Spec Kit / Claude Code docs and tooling config
-    // (including illustrative code snippets in fenced blocks) — not source code subject to
-    // the repo's lint rules.
+    // .claude/ holds Claude Code docs and tooling config (including illustrative code
+    // snippets in fenced blocks) — not source code subject to the repo's lint rules.
     ignores: [
       '**/.svelte-kit/**',
       '**/dist/**',
       '**/build/**',
-      'specs/**',
-      '.specify/**',
       '.claude/**',
     ],
   },

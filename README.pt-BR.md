@@ -15,9 +15,8 @@ Pronúncia: **kan-guêi-kai** (aproximadamente /kaŋ.ɡeɪ.kaɪ/)
 
 ## Status
 
-Em planejamento. Veja [`docs/mvp-plan.md`](docs/mvp-plan.md) para o escopo e a stack do MVP, e
-[`specs/`](specs/) para as especificações de cada subsistema (geradas via
-[Spec Kit](https://github.com/github/spec-kit)).
+MVP em desenvolvimento ativo. Veja [`docs/mvp-plan.md`](docs/mvp-plan.md) para o escopo e a
+stack do MVP.
 
 ## Licença
 

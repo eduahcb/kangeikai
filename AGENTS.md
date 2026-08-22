@@ -7,11 +7,9 @@ truth for agent instructions — tool-specific files (e.g. `CLAUDE.md`) only imp
 
 Kangeikai is an open source (AGPL-3.0), self-hostable "virtual office" in the style of
 Gather.town: a 2D shared map where people move avatars and get proximity-based voice/video
-chat. See `docs/mvp-plan.md` for the product plan and `.specify/memory/constitution.md` for
-the binding project constitution — **the constitution supersedes any ad-hoc decision made
-during implementation**; read it before making a scope or stack decision.
+chat. See `docs/mvp-plan.md` for the product plan.
 
-## Stack (fixed — do not substitute without a constitution amendment)
+## Stack (fixed — do not substitute without discussing it with the maintainer first)
 
 - **Monorepo**: pnpm workspaces (`apps/*`, `packages/*`), no Turborepo yet.
 - **Client** (`apps/client`): SvelteKit, running as a static SPA (`adapter-static`,
@@ -26,14 +24,13 @@ during implementation**; read it before making a scope or stack decision.
 - **Lint/format**: ESLint via `@antfu/eslint-config`, one root-level `eslint.config.js` for the
   whole workspace. No Prettier.
 - **Testing**: Vitest for pure/deterministic logic (e.g. movement/collision math); no automated
-  canvas-rendering assertions at MVP stage — validate rendered behavior manually via each
-  feature's `quickstart.md`.
+  canvas-rendering assertions at MVP stage — validate rendered behavior manually in a browser.
 - **Git hooks**: a native git hook, no wrapper package. The tracked source of truth is
   `.githooks/pre-commit` (runs `lint-staged`, which runs `eslint --fix` on staged files).
   `.git/hooks/` isn't versioned by git, so **after cloning, run once**:
   `cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
-  (documented as a deviation from constitution Principle V's originally-specified
-  `simple-git-hooks` in `specs/001-map-avatar-movement/plan.md`'s Complexity Tracking).
+  (a deliberate deviation from the originally-planned `simple-git-hooks` package — a plain
+  git hook needs no extra dependency).
 
 ## Conventions
 
@@ -45,13 +42,3 @@ during implementation**; read it before making a scope or stack decision.
 - Cross-package/module imports always use SvelteKit's `$lib` alias with an absolute path from
   `src/lib` — never a relative `../` import — including in test files (see `vitest.config.ts`'s
   `sveltekit()` plugin, needed for the alias to resolve there too).
-
-## Workflow
-
-Work is broken down with Spec Kit, one spec per subsystem under `specs/<NNN-feature-name>/`:
-`/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`. Tasks in each
-feature's `tasks.md` are grouped into phases (Setup → Foundational → per-user-story →
-Polish); implement a phase fully (including its checkpoint) before starting the next.
-
-Before adding anything not already covered by a feature's spec, check
-`.specify/memory/constitution.md` — Principle I locks the MVP scope explicitly.
