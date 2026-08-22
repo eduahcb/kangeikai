@@ -13,9 +13,13 @@ research.md.
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Define entry-flow constants (`MAX_NAME_LENGTH`, the `localStorage` key, the
-      default-name wordlists) in `apps/client/src/lib/entry/constants.ts`
-- [ ] T002 [P] Add the `valibot` dependency to `apps/client/package.json`
+- [X] T001 Define entry-flow constants (`MAX_NAME_LENGTH`, the `localStorage` key, the
+      default-name wordlists) in `apps/client/src/lib/entry/constants.ts`. Chose
+      `MAX_NAME_LENGTH = 24`, storage key `kangeikai:guest-profile`, and two small
+      (8-word) adjective/noun lists for `generateDefaultName()` (T004) to combine with a
+      number.
+- [X] T002 [P] Add the `valibot` dependency to `apps/client/package.json` (`^1.4.2`, matching
+      `apps/server`'s existing version)
 
 **Checkpoint**: Constants and Valibot available for the rest of the feature.
 
