@@ -128,17 +128,37 @@ plus sees the indicator (spec.md acceptance scenarios for Story 2).
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Implement `MediaControls` (own mic mute/unmute, camera on/off) in
-      `apps/client/src/lib/av/media-controls.ts` (depends on T009)
-- [ ] T015 [US2] Implement `avatar-video-overlay.svelte`: render `<video>` tiles positioned at
-      each nearby avatar's current screen-space coordinates for participants with camera
-      enabled, styled with a plain scoped `<style>` block (no CSS framework, per constitution
-      Principle V) (depends on T009; reads screen position from feature 001's camera/scene)
-- [ ] T016 [US2] Render a muted indicator on nearby avatars, driven by LiveKit's
+- [X] T014 [US2] Implement `MediaControls` (own mic mute/unmute, camera on/off) in
+      `apps/client/src/lib/av/media-controls.ts` (depends on T009). A thin wrapper over
+      `Room.localParticipant.setMicrophoneEnabled`/`setCameraEnabled`/`isMicrophoneEnabled`/
+      `isCameraEnabled`. `OfficeScene` creates one once `ProximityAudioController.connect()`
+      resolves and best-effort auto-enables the microphone (matches US1's "just works"
+      premise; camera stays off, opt-in via T017's UI) — graceful handling of a denied/missing
+      device is explicitly Phase 5's job (T018), not hardened here yet.
+- [X] T015 [US2] Implement `avatar-video-overlay.svelte`: render `<video>` tiles for nearby
+      participants with camera enabled, styled with a plain scoped `<style>` block (no CSS
+      framework, per constitution Principle V) (depends on T009). Redesigned after initial
+      review from screen-position-following tiles to a fixed Gather.town-style strip in the
+      corner (per user-provided reference screenshot) — always includes the local participant
+      ("You"), and a camera-off nearby participant still renders as a skeleton placeholder
+      (initial-letter avatar circle + mic-status dot) rather than being omitted. Bridged via a
+      small Svelte 5 runes module (`video-overlay-state.svelte.ts`) that `OfficeScene.update()`
+      writes into every frame — Phaser's imperative loop and Svelte's declarative component
+      tree don't share state natively. "Nearby" reuses `ProximityAudioController.update()`'s
+      returned session-id set (T011/T012's distance/zone computation) rather than recomputing
+      it, per spec.md's US2 acceptance scenarios tying video visibility to the same "close
+      enough to hear" condition as audio.
+- [X] T016 [US2] Render a muted indicator on nearby avatars, driven by LiveKit's
       `isMicrophoneEnabled` per participant (FR-006), in `avatar-video-overlay.svelte` or a
-      sibling component (depends on T009)
-- [ ] T017 [US2] Wire `MediaControls`' mute/camera-toggle UI into the page in
-      `apps/client/src/routes/+page.svelte` (depends on T014)
+      sibling component (depends on T009). Implemented as a colored dot on each tile (green =
+      unmuted, gray = muted) in the same component/state bridge as T015, since both need the
+      same per-tile nearby-participant data.
+- [X] T017 [US2] Wire `MediaControls`' mute/camera-toggle UI into the page in
+      `apps/client/src/routes/+page.svelte` (depends on T014). `OfficeScene` hands off the
+      `MediaControls` instance via a Phaser game event (`MEDIA_CONTROLS_READY_EVENT`) once
+      created, since it's a one-time reference rather than continuous per-frame data (unlike
+      T015's bridge) — `+page.svelte` also mounts `<AvatarVideoOverlay />` over the game
+      canvas.
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -172,6 +192,24 @@ others still fully works (spec.md SC-003).
 - [ ] T021 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
       confirm no per-distance track subscribe/unsubscribe logic was introduced (only volume
       changes)
+- [ ] T026 [P] Smooth remote-avatar rendering: interpolate `updateRemoteAvatar` in
+      `apps/client/src/lib/game/scenes/office-scene.ts` (currently snaps `entry.avatar.x/y` and
+      `entry.view` directly to each incoming Colyseus state update, ~20/sec per
+      `room-connection.ts`'s `SEND_INTERVAL_MS`) by buffering the last two received positions
+      and lerping toward the latest one each render frame, instead of teleporting on each
+      network patch. Local player is unaffected (fully client-predicted, no network wait).
+      Manually validate with two browsers: the local player's own movement still looks
+      identical; the other browser's view of that same player's avatar should no longer visibly
+      "step" between positions.
+- [X] T027 [P] Cap the video strip when many participants share a zone/proximity radius:
+      `updateVideoOverlay` in `apps/client/src/lib/game/scenes/office-scene.ts` now sorts
+      `nearbySessionIds` by distance to the local avatar and shows only the closest
+      `MAX_REMOTE_VIDEO_TILES` (4) as tiles; any remainder collapses into a single "+N"
+      overflow tile (`VideoOverlayOverflowTile`, `video-overlay-state.svelte.ts`, rendered in
+      `avatar-video-overlay.svelte`). Audio (`ProximityAudioController`) is unaffected — the cap
+      is video-strip-only, so overflowed participants are still heard at full proximity/zone
+      volume. Addresses a gap `spec.md` FR-010 left open (audio-only "multiple simultaneously
+      nearby participants" language, no video tile-count/layout requirement existed before).
 
 ---
 
@@ -224,8 +262,8 @@ Task: "Add the valibot dependency to apps/server/package.json"
 
 ## Notes
 
-- Total tasks: 21 (T001–T021)
-- Per-story breakdown: Setup 5, Foundational 4, US1 4, US2 4, US3 2, Polish 2
+- Total tasks: 23 (T001–T021, T026–T027)
+- Per-story breakdown: Setup 5, Foundational 4, US1 4, US2 4, US3 2, Polish 4
 - Suggested MVP scope: Phase 3 (User Story 1) only, on top of features 001–002
 - All tasks above follow the required `- [ ] [ID] [P?] [Story?] Description with file path`
   format

@@ -1,10 +1,16 @@
 <script lang='ts'>
-  import { OfficeScene } from '$lib/game/scenes/office-scene'
+  import type { MediaControls } from '$lib/av/media-controls'
+  import AvatarVideoOverlay from '$lib/av/avatar-video-overlay.svelte'
+  import { MEDIA_CONTROLS_READY_EVENT, OfficeScene } from '$lib/game/scenes/office-scene'
   import Phaser from 'phaser'
   import { onDestroy, onMount } from 'svelte'
 
   let gameContainer: HTMLDivElement
   let game: Phaser.Game | undefined
+
+  let mediaControls: MediaControls | undefined = $state()
+  let micEnabled = $state(false)
+  let cameraEnabled = $state(false)
 
   onMount(() => {
     game = new Phaser.Game({
@@ -22,19 +28,78 @@
       },
       scene: [OfficeScene],
     })
+
+    // OfficeScene creates MediaControls only once its own LiveKit room connection resolves
+    // (spec 003 FR-008's same gating, reused for media) — see office-scene.ts.
+    game.events.on(MEDIA_CONTROLS_READY_EVENT, (controls: MediaControls) => {
+      mediaControls = controls
+      micEnabled = controls.microphoneEnabled
+      cameraEnabled = controls.cameraEnabled
+    })
   })
 
   onDestroy(() => {
     game?.destroy(true)
   })
+
+  async function toggleMicrophone(): Promise<void> {
+    if (!mediaControls) {
+      return
+    }
+    await mediaControls.setMicrophoneEnabled(!micEnabled)
+    micEnabled = mediaControls.microphoneEnabled
+  }
+
+  async function toggleCamera(): Promise<void> {
+    if (!mediaControls) {
+      return
+    }
+    await mediaControls.setCameraEnabled(!cameraEnabled)
+    cameraEnabled = mediaControls.cameraEnabled
+  }
 </script>
 
-<div class='game-container' bind:this={gameContainer}></div>
+<div class='game-container' bind:this={gameContainer}>
+  <AvatarVideoOverlay />
+</div>
+
+<div class='media-controls'>
+  <button type='button' disabled={!mediaControls} onclick={toggleMicrophone}>
+    {micEnabled ? '🎤 Mute' : '🔇 Unmute'}
+  </button>
+  <button type='button' disabled={!mediaControls} onclick={toggleCamera}>
+    {cameraEnabled ? '📷 Turn camera off' : '📷 Turn camera on'}
+  </button>
+</div>
 
 <style>
   .game-container {
+    position: relative;
     width: 100vw;
     height: 100dvh;
     overflow: hidden;
+  }
+
+  .media-controls {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    display: flex;
+    gap: 8px;
+    transform: translateX(-50%);
+  }
+
+  .media-controls button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: rgb(0 0 0 / 70%);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .media-controls button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 </style>

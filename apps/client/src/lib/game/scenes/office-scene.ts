@@ -1,5 +1,7 @@
 import type { AvatarPosition } from '$lib/av/proximity-audio-controller'
+import type { VideoOverlayEntry } from '$lib/av/video-overlay-state.svelte'
 import type { AvatarDirection, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
+import type { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client'
 import interiorsUrl from '$lib/assets/maps/welcome/Interiors_32x32-used.png?url'
 import modernOfficeUrl from '$lib/assets/maps/welcome/Modern_Office_32x32.png?url'
 import roomBuilderUrl from '$lib/assets/maps/welcome/Room_Builder_32x32.png?url'
@@ -9,11 +11,17 @@ import avatarManIdleUrl from '$lib/assets/sprites/avatar-man-idle.png?url'
 import avatarManWalkUrl from '$lib/assets/sprites/avatar-man-walk.png?url'
 import avatarWomanIdleUrl from '$lib/assets/sprites/avatar-woman-idle.png?url'
 import avatarWomanWalkUrl from '$lib/assets/sprites/avatar-woman-walk.png?url'
+import { MediaControls } from '$lib/av/media-controls'
 import { ProximityAudioController } from '$lib/av/proximity-audio-controller'
+import { videoOverlayState } from '$lib/av/video-overlay-state.svelte'
 import { Avatar, AVATAR_FRAME_RANGES, getSpriteAnimation } from '$lib/game/entities/avatar'
 import { MovementController } from '$lib/game/input/movement-controller'
 import { RoomConnection } from '$lib/network/room-connection'
+import { Track } from 'livekit-client'
 import Phaser from 'phaser'
+
+/** Emitted on `game.events` once `MediaControls` is ready (T017 — see +page.svelte). */
+export const MEDIA_CONTROLS_READY_EVENT = 'mediacontrols-ready'
 
 /**
  * Placeholder spawn point, chosen outside every zone's bounding box in welcome.tmj as of
@@ -23,6 +31,14 @@ import Phaser from 'phaser'
  */
 const SPAWN_X = 150
 const SPAWN_Y = 150
+
+/**
+ * Cap on remote video tiles shown in the strip at once — beyond this, the closest
+ * `MAX_REMOTE_VIDEO_TILES` remain visible and the rest collapse into a single "+N" overflow
+ * tile (`updateVideoOverlay`). Keeps tiles legible regardless of how many participants share a
+ * zone/proximity radius; audio (`ProximityAudioController`) is unaffected by this cap.
+ */
+const MAX_REMOTE_VIDEO_TILES = 4
 
 const KEY_TO_DIRECTION: Record<string, AvatarDirection> = {
   ArrowUp: 'up',
@@ -180,6 +196,7 @@ export class OfficeScene extends Phaser.Scene {
       this.game.events.off(Phaser.Core.Events.BLUR, this.handleBlur, this)
       this.roomConnection.disconnect()
       this.proximityAudioController.disconnect()
+      videoOverlayState.set([])
     })
   }
 
@@ -199,6 +216,17 @@ export class OfficeScene extends Phaser.Scene {
     // (guest entry flow) will replace this with the guest's actual chosen display name.
     this.proximityAudioController
       .connect({ identity: sessionId, name: 'Guest' }, { x: this.avatar.x, y: this.avatar.y })
+      .then(() => {
+        const mediaControls = new MediaControls(this.proximityAudioController.liveKitRoom)
+        this.game.events.emit(MEDIA_CONTROLS_READY_EVENT, mediaControls)
+
+        // Mic defaults to on (matches US1's "just works" proximity-audio premise); camera
+        // defaults to off and is opt-in via MediaControls' UI (T017). Permission-denied/no-
+        // device handling (US3, T018) lands in a later phase — this is a best-effort attempt.
+        mediaControls.setMicrophoneEnabled(true).catch((error: unknown) => {
+          console.warn('kangeikai: failed to enable microphone', error)
+        })
+      })
       .catch((error: unknown) => {
         console.warn('kangeikai: failed to connect proximity audio/video', error)
       })
@@ -224,7 +252,8 @@ export class OfficeScene extends Phaser.Scene {
       motionState: this.avatar.motionState,
     })
 
-    this.proximityAudioController.update({ x: this.avatar.x, y: this.avatar.y }, this.remoteAvatarPositions())
+    const nearbySessionIds = this.proximityAudioController.update({ x: this.avatar.x, y: this.avatar.y }, this.remoteAvatarPositions())
+    this.updateVideoOverlay(nearbySessionIds)
   }
 
   private remoteAvatarPositions(): ReadonlyMap<string, AvatarPosition> {
@@ -233,6 +262,71 @@ export class OfficeScene extends Phaser.Scene {
       positions.set(sessionId, { x: entry.avatar.x, y: entry.avatar.y })
     }
     return positions
+  }
+
+  /**
+   * Refreshes `videoOverlayState` (T015/T016) with a fixed-position strip: the local
+   * participant ("You") plus the `MAX_REMOTE_VIDEO_TILES` closest nearby ("close enough to
+   * hear", `ProximityAudioController.update()`'s return value — same condition per spec.md's
+   * US2 acceptance scenarios) remote participants, closest-first. Each tile shows camera/mic
+   * state and video track (if publishing); a camera-off tile still renders (as a placeholder,
+   * per the component) rather than being omitted. Any remaining nearby participants beyond the
+   * cap collapse into a single "+N" overflow tile (still audible — this cap only affects the
+   * video strip, not `ProximityAudioController` volume). The strip itself (including "You") is
+   * hidden entirely while alone — it only appears once at least one other participant is
+   * nearby.
+   */
+  private updateVideoOverlay(nearbySessionIds: ReadonlySet<string>): void {
+    if (nearbySessionIds.size === 0) {
+      videoOverlayState.set([])
+      return
+    }
+
+    const room = this.proximityAudioController.liveKitRoom
+    const { localParticipant } = room
+
+    const closestSessionIds = [...nearbySessionIds].sort((a, b) => this.distanceToLocal(a) - this.distanceToLocal(b))
+
+    const entries: VideoOverlayEntry[] = [{
+      sessionId: localParticipant.identity,
+      name: localParticipant.name ?? 'You',
+      isLocal: true,
+      cameraEnabled: localParticipant.isCameraEnabled,
+      micEnabled: localParticipant.isMicrophoneEnabled,
+      videoTrack: localParticipant.getTrackPublication(Track.Source.Camera)?.track as LocalVideoTrack | undefined,
+    }]
+
+    for (const sessionId of closestSessionIds.slice(0, MAX_REMOTE_VIDEO_TILES)) {
+      const participant = room.remoteParticipants.get(sessionId)
+      if (!participant) {
+        continue
+      }
+
+      entries.push({
+        sessionId,
+        name: participant.name || sessionId,
+        isLocal: false,
+        cameraEnabled: participant.isCameraEnabled,
+        micEnabled: participant.isMicrophoneEnabled,
+        videoTrack: participant.getTrackPublication(Track.Source.Camera)?.track as RemoteVideoTrack | undefined,
+      })
+    }
+
+    const overflowCount = closestSessionIds.length - MAX_REMOTE_VIDEO_TILES
+    if (overflowCount > 0) {
+      entries.push({ overflowCount })
+    }
+
+    videoOverlayState.set(entries)
+  }
+
+  /** Euclidean distance in map pixels between the local avatar and a remote avatar. */
+  private distanceToLocal(sessionId: string): number {
+    const remote = this.remoteAvatars.get(sessionId)?.avatar
+    if (!remote) {
+      return Infinity
+    }
+    return Math.hypot(remote.x - this.avatar.x, remote.y - this.avatar.y)
   }
 
   private spawnRemoteAvatar(sessionId: string, state: AvatarState): void {
