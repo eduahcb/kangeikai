@@ -337,6 +337,7 @@ export class OfficeScene extends Phaser.Scene {
       isLocal: true,
       cameraEnabled: localParticipant.isCameraEnabled,
       micEnabled: localParticipant.isMicrophoneEnabled,
+      speaking: localParticipant.isSpeaking,
       videoTrack: localParticipant.getTrackPublication(Track.Source.Camera)?.track as LocalVideoTrack | undefined,
     }]
 
@@ -352,6 +353,7 @@ export class OfficeScene extends Phaser.Scene {
         isLocal: false,
         cameraEnabled: participant.isCameraEnabled,
         micEnabled: participant.isMicrophoneEnabled,
+        speaking: participant.isSpeaking,
         videoTrack: participant.getTrackPublication(Track.Source.Camera)?.track as RemoteVideoTrack | undefined,
       })
     }
