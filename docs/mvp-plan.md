@@ -38,6 +38,16 @@ Caso de uso primário: **virtual office** (presença assíncrona de time/comunid
 - Zoom manual controlado pelo usuário (scroll/botões +/-, como no Gather). O MVP usa zoom fixo
   em 1x (câmera segue o avatar, sem opção de aproximar/afastar); controle manual de zoom fica
   pra uma wave seguinte.
+- Retomar a mesma posição/sessão ao dar refresh na página. Hoje cada refresh cria uma sessão
+  nova no Colyseus e o avatar volta pro spawn point. Não exigiria persistência real (spec 002
+  já implementa reconexão via `allowReconnection`/`reconnectionToken`) — bastaria o client
+  guardar o `reconnectionToken` e tentar `reconnect()` antes de criar uma sessão nova; só
+  cobre continuidade dentro do processo em memória (não sobrevive a restart do servidor).
+- Toast de estado de conexão no client (perdida/reconectando/servidor indisponível), como no
+  Gather.town — lá, quando a conexão cai aparece um toast avisando. Hoje, se o servidor está
+  fora do ar ou a conexão cai, o avatar local continua totalmente interativo (movimento é
+  client-authoritative) sem nenhum aviso de que não está mais sincronizado com ninguém.
+  `RoomConnection` já expõe `onConnectionStateChange`; falta uma UI consumindo isso.
 
 ## Stack técnica
 
