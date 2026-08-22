@@ -4,6 +4,7 @@
   import * as v from 'valibot'
   import { MAX_NAME_LENGTH } from './constants'
   import { avatarTypeSchema, displayNameSchema } from './guest-profile-schema'
+  import { GuestProfileStore } from './guest-profile-store'
 
   interface Props {
     /** Called with the validated profile once the person confirms (FR-009). */
@@ -12,8 +13,13 @@
 
   const { onConfirm }: Props = $props()
 
-  let name = $state('')
-  let avatarType = $state<AvatarSpriteType>('man')
+  // Read once at component creation — pre-fills a returning visitor's previous choice (FR-005,
+  // US2); a first-time visitor (nothing stored) keeps today's blank/'man' defaults until
+  // Phase 5 adds the generated default name (US3).
+  const storedProfile = new GuestProfileStore().load()
+
+  let name = $state(storedProfile?.displayName ?? '')
+  let avatarType = $state<AvatarSpriteType>(storedProfile?.avatarType ?? 'man')
   let error = $state<string | undefined>()
 
   function handleSubmit(event: SubmitEvent): void {
