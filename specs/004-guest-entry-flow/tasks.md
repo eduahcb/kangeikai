@@ -67,20 +67,27 @@ and verify entry succeeds with that identity (spec.md SC-001, SC-003).
 
 ### Tests for User Story 1
 
-- [ ] T006 [P] [US1] Unit test `displayNameSchema`/`avatarTypeSchema`: rejects empty/
+- [X] T006 [P] [US1] Unit test `displayNameSchema`/`avatarTypeSchema`: rejects empty/
       whitespace-only, enforces `MAX_NAME_LENGTH` (FR-002, FR-003), in
-      `apps/client/tests/unit/guest-profile-schema.spec.ts` (depends on T003)
+      `apps/client/tests/unit/guest-profile-schema.spec.ts` (depends on T003). Per T003's
+      clamp-not-block decision, the length test asserts clamping rather than rejection.
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement `entry-form.svelte`: name input, avatar-type picker, confirm
+- [X] T007 [US1] Implement `entry-form.svelte`: name input, avatar-type picker, confirm
       button, blocking submission on an invalid name via `displayNameSchema`/`avatarTypeSchema`
       (FR-002), plain scoped `<style>` (no CSS framework, per constitution Principle V), in
-      `apps/client/src/lib/entry/entry-form.svelte` (depends on T005)
-- [ ] T008 [US1] Wire `+page.svelte` to render `EntryForm` before mounting the game scene,
+      `apps/client/src/lib/entry/entry-form.svelte` (depends on T005). No prefill props yet —
+      always starts blank/`'man'`; those land in Phase 4 (T010)/Phase 5 (T013).
+- [X] T008 [US1] Wire `+page.svelte` to render `EntryForm` before mounting the game scene,
       passing the confirmed `displayName`/`avatarType` down per
       `contracts/guest-profile-handoff.md` (FR-009), in `apps/client/src/routes/+page.svelte`
-      (depends on T007; integrates with feature 001's existing `+page.svelte`)
+      (depends on T007; integrates with feature 001's existing `+page.svelte`). The
+      `Phaser.Game` is now only constructed inside the confirm handler (`scene: []` in its
+      config), then `game.scene.add('office', OfficeScene, true, data)` starts `OfficeScene`
+      with the confirmed identity as its new `init(data: OfficeSceneData)` data — replacing the
+      hardcoded `'man'`/`'Guest'` placeholders in `office-scene.ts` (both flagged with
+      `// spec 004 will replace this` comments since spec 003).
 
 **Checkpoint**: User Story 1 fully functional and independently testable.
 
