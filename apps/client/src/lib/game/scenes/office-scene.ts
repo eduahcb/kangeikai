@@ -1,3 +1,4 @@
+import type { AvatarPosition } from '$lib/av/proximity-audio-controller'
 import type { AvatarDirection, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
 import interiorsUrl from '$lib/assets/maps/welcome/Interiors_32x32-used.png?url'
 import modernOfficeUrl from '$lib/assets/maps/welcome/Modern_Office_32x32.png?url'
@@ -8,6 +9,7 @@ import avatarManIdleUrl from '$lib/assets/sprites/avatar-man-idle.png?url'
 import avatarManWalkUrl from '$lib/assets/sprites/avatar-man-walk.png?url'
 import avatarWomanIdleUrl from '$lib/assets/sprites/avatar-woman-idle.png?url'
 import avatarWomanWalkUrl from '$lib/assets/sprites/avatar-woman-walk.png?url'
+import { ProximityAudioController } from '$lib/av/proximity-audio-controller'
 import { Avatar, AVATAR_FRAME_RANGES, getSpriteAnimation } from '$lib/game/entities/avatar'
 import { MovementController } from '$lib/game/input/movement-controller'
 import { RoomConnection } from '$lib/network/room-connection'
@@ -83,6 +85,7 @@ interface RemoteAvatarEntry {
 export class OfficeScene extends Phaser.Scene {
   private readonly movementController = new MovementController()
   private readonly roomConnection = new RoomConnection()
+  private readonly proximityAudioController = new ProximityAudioController()
   private readonly remoteAvatars = new Map<string, RemoteAvatarEntry>()
   private avatar!: Avatar
   private avatarView!: Phaser.GameObjects.Sprite
@@ -154,16 +157,40 @@ export class OfficeScene extends Phaser.Scene {
     this.roomConnection.onRemoteAvatarRemove(sessionId => this.removeRemoteAvatar(sessionId))
     // spriteType is hardcoded 'man' for now, matching the local avatar above — spec 004
     // (guest entry flow) will replace both with the guest's actual chosen spriteType.
-    this.roomConnection.connect({ spriteType: 'man' }).catch((error: unknown) => {
-      console.warn('kangeikai: failed to connect to the shared room', error)
-    })
+    this.roomConnection.connect({ spriteType: 'man' })
+      .then(() => this.connectProximityAudio())
+      .catch((error: unknown) => {
+        console.warn('kangeikai: failed to connect to the shared room', error)
+      })
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.keyboard?.off('keydown', this.handleKeyDown, this)
       this.input.keyboard?.off('keyup', this.handleKeyUp, this)
       this.game.events.off(Phaser.Core.Events.BLUR, this.handleBlur, this)
       this.roomConnection.disconnect()
+      this.proximityAudioController.disconnect()
     })
+  }
+
+  /**
+   * Only called once `roomConnection.connect()` has resolved, so the local avatar already has
+   * a synced position/sessionId from the realtime sync layer (FR-008) — a failure here (e.g.
+   * LiveKit unreachable) is caught and logged without affecting movement/presence sync
+   * (FR-009's system-independence requirement).
+   */
+  private connectProximityAudio(): void {
+    const { sessionId } = this.roomConnection
+    if (!sessionId) {
+      return
+    }
+
+    // name is hardcoded for now, same placeholder pattern as spriteType above — spec 004
+    // (guest entry flow) will replace this with the guest's actual chosen display name.
+    this.proximityAudioController
+      .connect({ identity: sessionId, name: 'Guest' }, { x: this.avatar.x, y: this.avatar.y })
+      .catch((error: unknown) => {
+        console.warn('kangeikai: failed to connect proximity audio/video', error)
+      })
   }
 
   update(_time: number, delta: number): void {
@@ -185,6 +212,16 @@ export class OfficeScene extends Phaser.Scene {
       direction: this.avatar.direction,
       motionState: this.avatar.motionState,
     })
+
+    this.proximityAudioController.update({ x: this.avatar.x, y: this.avatar.y }, this.remoteAvatarPositions())
+  }
+
+  private remoteAvatarPositions(): ReadonlyMap<string, AvatarPosition> {
+    const positions = new Map<string, AvatarPosition>()
+    for (const [sessionId, entry] of this.remoteAvatars) {
+      positions.set(sessionId, { x: entry.avatar.x, y: entry.avatar.y })
+    }
+    return positions
   }
 
   private spawnRemoteAvatar(sessionId: string, state: AvatarState): void {

@@ -86,21 +86,32 @@ audio ramps in; walk apart → confirm it ramps out (spec.md SC-001, SC-002).
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Unit test `proximityVolume`: `1` at distance 0, `0` at/after the range
+- [X] T010 [P] [US1] Unit test `proximityVolume`: `1` at distance 0, `0` at/after the range
       threshold, monotonically non-increasing in between, in
       `apps/client/tests/unit/proximity-volume.spec.ts` (depends on T008)
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Compute per-remote-participant distance each frame by matching LiveKit
+- [X] T011 [US1] Compute per-remote-participant distance each frame by matching LiveKit
       participant `identity` to the corresponding synced `AvatarState` position (feature 002),
-      in `proximity-audio-controller.ts` (depends on T009)
-- [ ] T012 [US1] Apply `proximityVolume(distance, hearingRangePx)` to each remote
+      in `proximity-audio-controller.ts` (depends on T009). Implemented together with T012 in
+      one `update(localPosition, remotePositions)` method, called once per frame by whichever
+      caller wires this controller into the scene (not yet done as of this phase — no task in
+      this file assigns that integration, tracked separately). `remotePositions` is a plain
+      `ReadonlyMap<sessionId, AvatarPosition>` supplied by the caller rather than this class
+      reaching into `RoomConnection` itself, keeping it decoupled from Colyseus specifics
+      (FR-009's system-independence intent) while still letting position data flow one-way in,
+      as FR-002 requires.
+- [X] T012 [US1] Apply `proximityVolume(distance, hearingRangePx)` to each remote
       participant's LiveKit audio track each frame, in `proximity-audio-controller.ts` (depends
-      on T011, T008)
-- [ ] T013 [US1] Skip establishing the local participant's proximity connection until their
+      on T011, T008). `HEARING_RANGE_PX` is a fixed 200px constant (~6 tiles at feature 001's
+      32px tiles) — spec.md Assumptions calls this "tuned during implementation," not derived
+      from anything else.
+- [X] T013 [US1] Skip establishing the local participant's proximity connection until their
       own avatar has a valid synced position (FR-008), in `proximity-audio-controller.ts`
-      (depends on T009)
+      (depends on T009). Enforced at the type level rather than a runtime check: `connect()`
+      now requires a `localPosition: AvatarPosition` argument, so there is no way to call it
+      before a position exists to pass in.
 
 **Checkpoint**: User Story 1 fully functional and independently testable.
 
@@ -218,3 +229,25 @@ Task: "Add the valibot dependency to apps/server/package.json"
 - Suggested MVP scope: Phase 3 (User Story 1) only, on top of features 001–002
 - All tasks above follow the required `- [ ] [ID] [P?] [Story?] Description with file path`
   format
+
+---
+
+## Phase 7: Convergence
+
+Found by `/speckit-converge` after implementing Phases 1–3: `ProximityAudioController` (T009,
+T011–T013) is fully implemented but never instantiated, connected, or driven from anywhere in
+`apps/client` — no call site exists outside `proximity-audio-controller.ts` itself, so US1's
+independent test (spec.md acceptance scenarios 1–3) cannot actually be exercised end-to-end.
+This blocks the Phase 3 checkpoint's claim of being "fully functional and independently
+testable."
+
+- [ ] T022 [US1] Expose `RoomConnection`'s local Colyseus `sessionId` (needed as the LiveKit
+      `identity`, per `contracts/livekit-token-endpoint.md`'s Stability section, and to key
+      remote-position lookups) in `apps/client/src/lib/network/room-connection.ts` per
+      US1/AC1-3 (missing)
+- [ ] T023 [US1] Wire `ProximityAudioController` into `OfficeScene`: instantiate it once the
+      local avatar has a synced position (FR-008), call `connect()` with the local `sessionId`/
+      display name and position, then call `update()` every frame with the local avatar's
+      position and a `sessionId → position` map built from the scene's already-tracked remote
+      avatars, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T022) per
+      US1/AC1-3, Phase 3 checkpoint (missing)
