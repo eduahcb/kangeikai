@@ -69,9 +69,9 @@ function waitFor(client: SDKRoom, predicate: () => boolean, timeoutMs = 2000): P
 
 describe('officeRoom', () => {
   it('propagates position/direction/motion-state changes between two connected clients', async () => {
-    const room = await colyseus.createRoom('office', { spriteType: 'man' })
-    const clientA = await colyseus.connectTo(room, { spriteType: 'man' })
-    const clientB = await colyseus.connectTo(room, { spriteType: 'woman' })
+    const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: '' })
+    const clientA = await colyseus.connectTo(room, { spriteType: 'man', accessCode: '' })
+    const clientB = await colyseus.connectTo(room, { spriteType: 'woman', accessCode: '' })
 
     // let clientB's initial full-state sync (both avatars already present) settle before
     // watching for the delta patch clientA's update below is expected to trigger
@@ -89,10 +89,10 @@ describe('officeRoom', () => {
   })
 
   it('broadcasts a new avatar on join and removes it on a clean leave', async () => {
-    const room = await colyseus.createRoom('office', { spriteType: 'man' })
-    const clientA = await colyseus.connectTo(room, { spriteType: 'man' })
+    const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: '' })
+    const clientA = await colyseus.connectTo(room, { spriteType: 'man', accessCode: '' })
 
-    const clientB = await colyseus.connectTo(room, { spriteType: 'woman' })
+    const clientB = await colyseus.connectTo(room, { spriteType: 'woman', accessCode: '' })
     await waitFor(clientA, () => clientA.state.players.has(clientB.sessionId))
 
     await clientB.leave()
@@ -100,9 +100,9 @@ describe('officeRoom', () => {
   })
 
   it('hides an ungracefully-disconnected participant during the grace period and resumes the same session on reconnection', async () => {
-    const room = await colyseus.createRoom('office', { spriteType: 'man' })
-    const clientA = await colyseus.connectTo(room, { spriteType: 'man' })
-    const clientB = await colyseus.connectTo(room, { spriteType: 'woman' })
+    const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: '' })
+    const clientA = await colyseus.connectTo(room, { spriteType: 'man', accessCode: '' })
+    const clientB = await colyseus.connectTo(room, { spriteType: 'woman', accessCode: '' })
     await waitFor(clientA, () => clientA.state.players.has(clientB.sessionId))
 
     const { sessionId, reconnectionToken } = clientB
@@ -117,13 +117,42 @@ describe('officeRoom', () => {
   })
 
   it('sends a sessionProof on join that verifies against the client\'s own sessionId', async () => {
-    const room = await colyseus.createRoom('office', { spriteType: 'man' })
-    const client = await colyseus.connectTo(room, { spriteType: 'man' })
+    const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: '' })
+    const client = await colyseus.connectTo(room, { spriteType: 'man', accessCode: '' })
 
     const proof = await new Promise<string>((resolve) => {
       client.onMessage<{ proof: string }>('sessionProof', payload => resolve(payload.proof))
     })
 
     expect(proof).toBe(computeSessionProof(client.sessionId))
+  })
+
+  describe('access code gate (onAuth)', () => {
+    afterEach(() => {
+      delete process.env.ACCESS_CODE
+    })
+
+    it('allows any accessCode (including empty) when ACCESS_CODE is not set', async () => {
+      const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: '' })
+      await expect(colyseus.connectTo(room, { spriteType: 'man', accessCode: 'anything' })).resolves.toBeDefined()
+    })
+
+    it('rejects a join with the wrong accessCode when ACCESS_CODE is set', async () => {
+      process.env.ACCESS_CODE = 'letmein'
+      const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: 'letmein' })
+      await expect(colyseus.connectTo(room, { spriteType: 'man', accessCode: 'wrong' })).rejects.toThrow()
+    })
+
+    it('rejects a join with a missing accessCode when ACCESS_CODE is set', async () => {
+      process.env.ACCESS_CODE = 'letmein'
+      const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: 'letmein' })
+      await expect(colyseus.connectTo(room, { spriteType: 'man' })).rejects.toThrow()
+    })
+
+    it('allows a join with the correct accessCode when ACCESS_CODE is set', async () => {
+      process.env.ACCESS_CODE = 'letmein'
+      const room = await colyseus.createRoom('office', { spriteType: 'man', accessCode: 'letmein' })
+      await expect(colyseus.connectTo(room, { spriteType: 'man', accessCode: 'letmein' })).resolves.toBeDefined()
+    })
   })
 })

@@ -24,6 +24,21 @@ import Phaser from 'phaser'
 export const MEDIA_CONTROLS_READY_EVENT = 'mediacontrols-ready'
 
 /**
+ * Emitted on `game.events` when the Colyseus room join is rejected (most commonly a wrong/
+ * missing access code, `OfficeRoom.onAuth`) — `+page.svelte` tears down the game and returns
+ * to `EntryForm` on this event, since there's no meaningful in-game state to show otherwise.
+ */
+export const ROOM_JOIN_FAILED_EVENT = 'room-join-failed'
+
+/**
+ * Emitted on `game.events` once the Colyseus room join actually succeeds — `+page.svelte` uses
+ * this (rather than assuming success the instant the game is constructed) to know when it's
+ * safe to reveal the map, instead of it flashing visible during the connect attempt right
+ * before a possible rejection (`ROOM_JOIN_FAILED_EVENT`).
+ */
+export const ROOM_JOINED_EVENT = 'room-joined'
+
+/**
  * Placeholder spawn point, chosen outside every zone's bounding box in welcome.tmj as of
  * authoring time. The map has no collision layer yet (tasks.md T013 known gap), so this can't
  * be validated against walkable/collision data (data-model.md's spawn invariant) until T021 —
@@ -120,6 +135,11 @@ const REMOTE_AVATAR_SMOOTHING_TAU_SECONDS = 0.08
 export interface OfficeSceneData {
   displayName: string
   spriteType: AvatarSpriteType
+  /**
+   * Typed on the entry form; validated server-side (`OfficeRoom.onAuth`, contracts/office-
+   * room-protocol.md) — a shared room lock, not part of the guest's identity.
+   */
+  accessCode: string
 }
 
 export class OfficeScene extends Phaser.Scene {
@@ -133,6 +153,7 @@ export class OfficeScene extends Phaser.Scene {
   private mapHeightPx = 0
   private displayName!: string
   private spriteType!: AvatarSpriteType
+  private accessCode!: string
 
   constructor() {
     super('office')
@@ -141,6 +162,7 @@ export class OfficeScene extends Phaser.Scene {
   init(data: OfficeSceneData): void {
     this.displayName = data.displayName
     this.spriteType = data.spriteType
+    this.accessCode = data.accessCode
   }
 
   preload(): void {
@@ -213,10 +235,14 @@ export class OfficeScene extends Phaser.Scene {
     this.roomConnection.onRemoteAvatarAdd((sessionId, state) => this.spawnRemoteAvatar(sessionId, state))
     this.roomConnection.onRemoteAvatarChange((sessionId, state) => this.updateRemoteAvatar(sessionId, state))
     this.roomConnection.onRemoteAvatarRemove(sessionId => this.removeRemoteAvatar(sessionId))
-    this.roomConnection.connect({ spriteType: this.spriteType })
-      .then(() => this.connectProximityAudio())
+    this.roomConnection.connect({ spriteType: this.spriteType, accessCode: this.accessCode })
+      .then(() => {
+        this.game.events.emit(ROOM_JOINED_EVENT)
+        this.connectProximityAudio()
+      })
       .catch((error: unknown) => {
         console.warn('kangeikai: failed to connect to the shared room', error)
+        this.game.events.emit(ROOM_JOIN_FAILED_EVENT)
       })
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

@@ -11,12 +11,20 @@ Client connects to the one well-known room (`office`) with join options:
 ```ts
 interface OfficeJoinOptions {
   spriteType: "man" | "woman"; // chosen by the guest entry flow feature (004) before this call
+  accessCode: string;          // typed on the entry form; see OfficeRoom.onAuth below
 }
 ```
 
 The server validates `options` against a Valibot schema (`officeJoinOptionsSchema` in
 `message-schemas.ts`) before trusting it — join options are untrusted client input over a
 network boundary, per constitution Principle V. A validation failure rejects the join.
+
+Before that, `OfficeRoom.onAuth` checks `accessCode` against the server's `ACCESS_CODE`
+environment variable — a simple shared-secret room lock, not per-user auth. Only enforced when
+`ACCESS_CODE` is actually set (local dev needs no code configured); when set, a mismatch
+rejects the connection before any session/avatar exists, which also transitively blocks
+proximity audio/video (spec 003), since that depends on a real `onJoin` having happened
+(`session-proof.ts`).
 
 The server assigns a `sessionId` and adds a `ParticipantSession` to `OfficeRoomState.players`,
 seeding `avatarState` with the given `spriteType` and a valid spawn position (feature 001's

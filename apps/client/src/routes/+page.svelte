@@ -4,7 +4,7 @@
   import AvatarVideoOverlay from '$lib/av/avatar-video-overlay.svelte'
   import EntryForm from '$lib/entry/entry-form.svelte'
   import { GuestProfileStore } from '$lib/entry/guest-profile-store'
-  import { MEDIA_CONTROLS_READY_EVENT, OfficeScene } from '$lib/game/scenes/office-scene'
+  import { MEDIA_CONTROLS_READY_EVENT, OfficeScene, ROOM_JOIN_FAILED_EVENT, ROOM_JOINED_EVENT } from '$lib/game/scenes/office-scene'
   import Phaser from 'phaser'
   import { onDestroy } from 'svelte'
 
@@ -14,6 +14,11 @@
   const guestProfileStore = new GuestProfileStore()
 
   let guestProfile: GuestProfile | undefined = $state()
+  // True from the moment the game is constructed until the Colyseus join actually succeeds —
+  // keeps EntryForm mounted (pending) instead of revealing the map, so it never flashes
+  // visible right before a possible access-code rejection (ROOM_JOIN_FAILED_EVENT).
+  let connecting = $state(false)
+  let joinError: string | undefined = $state()
   let mediaControls: MediaControls | undefined = $state()
   let micEnabled = $state(false)
   let cameraEnabled = $state(false)
@@ -21,9 +26,11 @@
   let cameraUnavailable = $state(false)
 
   /** Mounts the game only once entry is confirmed (FR-009) — see `EntryForm` below. */
-  function handleEntryConfirm(profile: GuestProfile): void {
+  function handleEntryConfirm(profile: GuestProfile, accessCode: string): void {
     guestProfileStore.save(profile)
+    joinError = undefined
     guestProfile = profile
+    connecting = true
 
     game = new Phaser.Game({
       type: Phaser.AUTO,
@@ -41,7 +48,7 @@
       scene: [],
     })
 
-    game.scene.add('office', OfficeScene, true, { displayName: profile.displayName, spriteType: profile.avatarType })
+    game.scene.add('office', OfficeScene, true, { displayName: profile.displayName, spriteType: profile.avatarType, accessCode })
 
     // OfficeScene creates MediaControls only once its own LiveKit room connection resolves
     // (spec 003 FR-008's same gating, reused for media) — see office-scene.ts.
@@ -51,6 +58,20 @@
       cameraEnabled = controls.cameraEnabled
       micUnavailable = controls.microphoneUnavailable
       cameraUnavailable = controls.cameraUnavailable
+    })
+
+    game.events.on(ROOM_JOINED_EVENT, () => {
+      connecting = false
+    })
+
+    // Most likely a wrong/missing access code (OfficeRoom.onAuth) — there's no meaningful
+    // in-game state to show, so tear down and let the person try again from the entry form.
+    game.events.on(ROOM_JOIN_FAILED_EVENT, () => {
+      game?.destroy(true)
+      game = undefined
+      guestProfile = undefined
+      connecting = false
+      joinError = 'Could not join — check the access code and try again.'
     })
   }
 
@@ -78,13 +99,13 @@
 </script>
 
 <div class='game-container' bind:this={gameContainer}>
-  {#if guestProfile}
+  {#if guestProfile && !connecting}
     <AvatarVideoOverlay />
   {/if}
 </div>
 
-{#if !guestProfile}
-  <EntryForm onConfirm={handleEntryConfirm} />
+{#if !guestProfile || connecting}
+  <EntryForm onConfirm={handleEntryConfirm} {joinError} pending={connecting} />
 {:else}
   <div class='media-controls'>
     <button type='button' disabled={!mediaControls || micUnavailable} onclick={toggleMicrophone}>

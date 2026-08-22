@@ -10,6 +10,11 @@ import { Client, getStateCallbacks } from '@colyseus/sdk'
  */
 export interface OfficeJoinOptions {
   spriteType: AvatarSpriteType
+  /**
+   * Validated server-side (`OfficeRoom.onAuth`) — only enforced when the deployment has
+   * `ACCESS_CODE` configured.
+   */
+  accessCode: string
 }
 
 /** Mirrors contracts/office-room-protocol.md's UpdateStatePayload. */

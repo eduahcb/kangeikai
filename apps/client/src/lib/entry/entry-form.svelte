@@ -8,11 +8,24 @@
   import { GuestProfileStore } from './guest-profile-store'
 
   interface Props {
-    /** Called with the validated profile once the person confirms (FR-009). */
-    onConfirm: (profile: GuestProfile) => void
+    /**
+     * Called with the validated profile and the (possibly empty) access code once the person
+     * confirms (FR-009) — the server decides whether the code is actually required.
+     */
+    onConfirm: (profile: GuestProfile, accessCode: string) => void
+    /**
+     * Set by the parent when a previous attempt's room join was rejected (e.g. wrong access
+     * code) — cleared as soon as the person edits the code again.
+     */
+    joinError?: string
+    /**
+     * True while a submitted room join is in flight — disables the form and shows a spinner
+     * on the submit button, rather than replacing this form with a separate loading screen.
+     */
+    pending?: boolean
   }
 
-  const { onConfirm }: Props = $props()
+  const { onConfirm, joinError, pending = false }: Props = $props()
 
   // Read once at component creation — pre-fills a returning visitor's previous choice (FR-005,
   // US2), or a friendly generated name for a first-time visitor (FR-006, US3) when nothing is
@@ -21,6 +34,8 @@
 
   let name = $state(storedProfile?.displayName ?? generateDefaultName())
   let avatarType = $state<AvatarSpriteType>(storedProfile?.avatarType ?? 'man')
+  // Never persisted — it's a shared room lock, not part of the guest's identity/appearance.
+  let accessCode = $state('')
   let error = $state<string | undefined>()
 
   function handleSubmit(event: SubmitEvent): void {
@@ -38,7 +53,7 @@
     }
 
     error = undefined
-    onConfirm({ displayName: nameResult.output, avatarType: avatarResult.output })
+    onConfirm({ displayName: nameResult.output, avatarType: avatarResult.output }, accessCode)
   }
 </script>
 
@@ -53,10 +68,11 @@
       autocomplete='off'
       maxlength={MAX_NAME_LENGTH}
       bind:value={name}
+      disabled={pending}
       oninput={() => (error = undefined)}
     />
 
-    <fieldset>
+    <fieldset disabled={pending}>
       <legend>Avatar</legend>
       <label>
         <input type='radio' name='avatarType' value='man' bind:group={avatarType} />
@@ -68,11 +84,29 @@
       </label>
     </fieldset>
 
+    <label for='entry-access-code'>Access code (if you have one)</label>
+    <input
+      id='entry-access-code'
+      type='password'
+      autocomplete='off'
+      bind:value={accessCode}
+      disabled={pending}
+      oninput={() => (error = undefined)}
+    />
+
     {#if error}
       <p class='error'>{error}</p>
+    {:else if joinError}
+      <p class='error'>{joinError}</p>
     {/if}
 
-    <button type='submit'>Enter</button>
+    <button type='submit' disabled={pending}>
+      {#if pending}
+        <span class='spinner'></span> Connecting…
+      {:else}
+        Enter
+      {/if}
+    </button>
   </form>
 </div>
 
@@ -106,7 +140,8 @@
     font-size: 14px;
   }
 
-  input[type='text'] {
+  input[type='text'],
+  input[type='password'] {
     padding: 8px;
     border: 1px solid #4a4a4a;
     border-radius: 6px;
@@ -141,6 +176,10 @@
   }
 
   button[type='submit'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 10px;
     border: none;
     border-radius: 6px;
@@ -149,5 +188,25 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+  }
+
+  button[type='submit']:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgb(58 32 48 / 30%);
+    border-top-color: #3a2030;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

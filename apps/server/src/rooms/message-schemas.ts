@@ -12,6 +12,8 @@ const spriteTypeSchema = v.picklist(['man', 'woman'])
 /** Client→server join payload (contracts/office-room-protocol.md's OfficeJoinOptions). */
 export const officeJoinOptionsSchema = v.object({
   spriteType: spriteTypeSchema,
+  /** Checked in `onAuth` against `ACCESS_CODE` (only enforced when that env var is set). */
+  accessCode: v.string(),
 })
 
 /** Client→server "updateState" message payload (contracts/office-room-protocol.md). */
