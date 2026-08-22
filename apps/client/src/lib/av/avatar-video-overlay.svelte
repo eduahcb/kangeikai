@@ -48,17 +48,19 @@
   .strip {
     position: absolute;
     top: 16px;
-    left: 16px;
+    left: 50%;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    justify-content: center;
+    gap: 12px;
     pointer-events: none;
+    transform: translateX(-50%);
   }
 
   .tile {
     position: relative;
-    width: 140px;
-    height: 105px;
+    width: 220px;
+    height: 165px;
     overflow: hidden;
     border-radius: 12px;
     background: #000;
@@ -85,11 +87,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: #e8a9c9;
     color: #3a2030;
+    font-size: 24px;
     font-weight: 600;
   }
 
@@ -97,8 +100,8 @@
     position: absolute;
     right: -2px;
     bottom: -2px;
-    width: 10px;
-    height: 10px;
+    width: 14px;
+    height: 14px;
     border: 2px solid #1a1a1a;
     border-radius: 50%;
     background: #6b7280;

@@ -262,9 +262,15 @@ export class OfficeScene extends Phaser.Scene {
    * `ProximityAudioController.update()`'s return value — same condition per spec.md's US2
    * acceptance scenarios) remote participant. Each tile shows camera/mic state and video
    * track (if publishing); a camera-off tile still renders (as a placeholder, per the
-   * component) rather than being omitted.
+   * component) rather than being omitted. The strip itself (including "You") is hidden
+   * entirely while alone — it only appears once at least one other participant is nearby.
    */
   private updateVideoOverlay(nearbySessionIds: ReadonlySet<string>): void {
+    if (nearbySessionIds.size === 0) {
+      videoOverlayState.set([])
+      return
+    }
+
     const room = this.proximityAudioController.liveKitRoom
     const { localParticipant } = room
 
