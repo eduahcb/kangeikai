@@ -16,6 +16,7 @@
     "@colyseus/schema": "^4.0.31",
     "@colyseus/sdk": "^0.17.43",
     "@kangeikai/shared": "workspace:*",
+    "livekit-client": "^2.22.0",
     "phaser": "^4.2.1"
   },
   "devDependencies": {
