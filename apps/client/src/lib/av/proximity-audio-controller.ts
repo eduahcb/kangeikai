@@ -23,6 +23,11 @@ export interface ProximityAudioControllerOptions {
   /** MUST equal the participant's Colyseus sessionId (contract's "Stability" section). */
   identity: string
   name: string
+  /**
+   * `RoomConnection.sessionProof` — proves `identity` came from a real `onJoin` (security
+   * review finding: the endpoint used to accept any identity unverified).
+   */
+  proof: string
 }
 
 /** Mirrors contracts/livekit-token-endpoint.md's LiveKitTokenResponse. */

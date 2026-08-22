@@ -1,6 +1,7 @@
 import type { Client } from 'colyseus'
 import { CloseCode, Room } from 'colyseus'
 import * as v from 'valibot'
+import { computeSessionProof } from '../session-proof'
 import { officeJoinOptionsSchema, updateStatePayloadSchema } from './message-schemas'
 import { AvatarSchema } from './schema/avatar-schema'
 import { OfficeRoomState } from './schema/office-room-state'
@@ -46,6 +47,17 @@ export class OfficeRoom extends Room<{ state: OfficeRoomState }> {
     avatar.y = SPAWN_Y
 
     this.state.players.set(client.sessionId, avatar)
+
+    // Lets /livekit-token (spec 003) confirm this identity really went through onJoin, instead
+    // of accepting any identity/name unauthenticated (security review finding). Best-effort:
+    // a missing SESSION_SIGNING_SECRET degrades to "no proximity audio/video" rather than
+    // blocking the room join itself (FR-009's movement/presence independence).
+    try {
+      client.send('sessionProof', { proof: computeSessionProof(client.sessionId) })
+    }
+    catch (error) {
+      console.warn('kangeikai: failed to send session proof (SESSION_SIGNING_SECRET missing?)', error)
+    }
   }
 
   async onLeave(client: Client, code?: number): Promise<void> {

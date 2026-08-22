@@ -30,6 +30,8 @@ type RemoteAvatarRemoveListener = (sessionId: string) => void
 const DEFAULT_SERVER_URL = PUBLIC_COLYSEUS_URL
 /** Client→server position updates: on-change, capped ~20/sec (research.md). */
 const SEND_INTERVAL_MS = 1000 / 20
+/** How long to wait for the server's "sessionProof" message before giving up (see connect()). */
+const SESSION_PROOF_TIMEOUT_MS = 5000
 
 interface OfficeRoomStateShape {
   players: MapSchema<AvatarState>
@@ -85,6 +87,7 @@ export class RoomConnection {
   private lastSentAt = 0
   private pendingPayload: UpdateStatePayload | undefined
   private pendingSend: ReturnType<typeof setTimeout> | undefined
+  private proof: string | undefined
 
   constructor(serverUrl: string = DEFAULT_SERVER_URL) {
     this.client = new Client(serverUrl)
@@ -97,6 +100,18 @@ export class RoomConnection {
    */
   get sessionId(): string | undefined {
     return this.room?.sessionId
+  }
+
+  /**
+   * Proves `sessionId` came from `OfficeRoom.onJoin` — MUST be sent as `proof` in the
+   * `/livekit-token` request (contracts/livekit-token-endpoint.md), which rejects a token
+   * request otherwise (security review finding: it used to accept any identity unverified).
+   * `undefined` until the server's "sessionProof" message arrives (or if it never does —
+   * e.g. `SESSION_SIGNING_SECRET` unset server-side — in which case proximity audio/video
+   * simply fails to connect, per FR-009's independence from movement/presence).
+   */
+  get sessionProof(): string | undefined {
+    return this.proof
   }
 
   onConnectionStateChange(listener: ConnectionStateListener): () => void {
@@ -131,12 +146,34 @@ export class RoomConnection {
       room.onDrop(() => this.emitConnectionState('connecting'))
       room.onReconnect(() => this.emitConnectionState('connected'))
       this.bindRemoteAvatarEvents(room)
+      await this.awaitSessionProof(room)
       this.emitConnectionState('connected')
     }
     catch (error) {
       this.emitConnectionState('disconnected')
       throw error
     }
+  }
+
+  /**
+   * Waits briefly for the server's "sessionProof" message (sent synchronously from
+   * `OfficeRoom.onJoin`, so it's expected almost immediately). Times out rather than hanging
+   * forever if it never arrives, so a misconfigured server degrades to "no proximity audio/
+   * video" instead of blocking movement/presence sync from ever reporting "connected".
+   */
+  private awaitSessionProof(room: Room<OfficeRoomLike, OfficeRoomStateShape>): Promise<void> {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        console.warn('kangeikai: no session proof received from server (SESSION_SIGNING_SECRET missing?)')
+        resolve()
+      }, SESSION_PROOF_TIMEOUT_MS)
+
+      room.onMessage<{ proof: string }>('sessionProof', (payload) => {
+        clearTimeout(timeout)
+        this.proof = payload.proof
+        resolve()
+      })
+    })
   }
 
   disconnect(): void {
