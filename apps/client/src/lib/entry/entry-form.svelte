@@ -3,6 +3,7 @@
   import type { GuestProfile } from './guest-profile-schema'
   import * as v from 'valibot'
   import { MAX_NAME_LENGTH } from './constants'
+  import { generateDefaultName } from './default-name'
   import { avatarTypeSchema, displayNameSchema } from './guest-profile-schema'
   import { GuestProfileStore } from './guest-profile-store'
 
@@ -14,11 +15,11 @@
   const { onConfirm }: Props = $props()
 
   // Read once at component creation — pre-fills a returning visitor's previous choice (FR-005,
-  // US2); a first-time visitor (nothing stored) keeps today's blank/'man' defaults until
-  // Phase 5 adds the generated default name (US3).
+  // US2), or a friendly generated name for a first-time visitor (FR-006, US3) when nothing is
+  // stored.
   const storedProfile = new GuestProfileStore().load()
 
-  let name = $state(storedProfile?.displayName ?? '')
+  let name = $state(storedProfile?.displayName ?? generateDefaultName())
   let avatarType = $state<AvatarSpriteType>(storedProfile?.avatarType ?? 'man')
   let error = $state<string | undefined>()
 
