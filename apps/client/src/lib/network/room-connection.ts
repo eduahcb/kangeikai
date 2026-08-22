@@ -1,6 +1,7 @@
 import type { MapSchema } from '@colyseus/schema'
 import type { Room } from '@colyseus/sdk'
 import type { AvatarDirection, AvatarMotionState, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
+import { PUBLIC_COLYSEUS_URL } from '$env/static/public'
 import { Client, getStateCallbacks } from '@colyseus/sdk'
 
 /**
@@ -25,7 +26,8 @@ type ConnectionStateListener = (state: ConnectionState) => void
 type RemoteAvatarListener = (sessionId: string, avatar: AvatarState) => void
 type RemoteAvatarRemoveListener = (sessionId: string) => void
 
-const DEFAULT_SERVER_URL = 'ws://localhost:2567'
+/** Baked in at build time (adapter-static/SPA — no server to read this at runtime) — see .env.example. */
+const DEFAULT_SERVER_URL = PUBLIC_COLYSEUS_URL
 /** Client→server position updates: on-change, capped ~20/sec (research.md). */
 const SEND_INTERVAL_MS = 1000 / 20
 

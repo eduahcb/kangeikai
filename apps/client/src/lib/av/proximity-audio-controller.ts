@@ -1,10 +1,12 @@
 import type { Zone } from '$lib/game/map/zone-lookup'
 import type { AvatarState } from '@kangeikai/shared'
+import { PUBLIC_LIVEKIT_TOKEN_ENDPOINT } from '$env/static/public'
 import { zoneAt } from '$lib/game/map/zone-lookup'
 import { Room } from 'livekit-client'
 import { proximityVolume } from './proximity-volume'
 
-const DEFAULT_TOKEN_ENDPOINT = 'http://localhost:2567/livekit-token'
+/** Baked in at build time (adapter-static/SPA — no server to read this at runtime) — see .env.example. */
+const DEFAULT_TOKEN_ENDPOINT = PUBLIC_LIVEKIT_TOKEN_ENDPOINT
 
 /**
  * Fixed hearing-range threshold in map pixels (spec.md Assumptions: tuned during
