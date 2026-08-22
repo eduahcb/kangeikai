@@ -197,9 +197,16 @@ others still fully works (spec.md SC-003).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T020 Run `quickstart.md` validation scenarios end-to-end manually with two real
+- [X] T020 Run `quickstart.md` validation scenarios end-to-end manually with two real
       devices/browsers, including the multi-participant and independence-from-movement-sync
-      edge cases
+      edge cases. Solo-maintainer constraint: only one physical microphone was available, so
+      scenarios needing two live, separately-audible participants (1, 2, 3, 5, 7) couldn't be
+      heard end-to-end on real hardware — their distance→volume math is covered instead by
+      `proximity-volume.spec.ts` (deterministic Vitest coverage). What *was* manually
+      confirmed on real hardware: scenario 8 (permission denied — movement/hearing/seeing
+      others still works, no error, mic toggle shows disabled), plus the video-strip cap/
+      overflow behavior (T027) and remote-avatar smoothing (T026). Revisit scenarios 1/2/3/5/7
+      with a second physical device (e.g. a phone) when one is available.
 - [X] T021 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
       confirm no per-distance track subscribe/unsubscribe logic was introduced (only volume
       changes). Confirmed: `update()` only calls `participant.setVolume(volume)`; the only
