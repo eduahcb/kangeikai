@@ -29,15 +29,29 @@ research.md.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 [P] Implement `displayNameSchema`, `avatarTypeSchema` (strict Valibot field
+- [X] T003 [P] Implement `displayNameSchema`, `avatarTypeSchema` (strict Valibot field
       schemas), and `guestProfileSchema` (lenient, with per-field `v.fallback()` — see
       research.md) in `apps/client/src/lib/entry/guest-profile-schema.ts` (depends on T001,
-      T002)
-- [ ] T004 [P] Implement `generateDefaultName()` pure function in
-      `apps/client/src/lib/entry/default-name.ts` (depends on T001)
-- [ ] T005 Implement `GuestProfileStore` (`load()`/`save()`, wrapping `localStorage` in
+      T002). Resolves a data-model.md/quickstart.md conflict over overlong names (confirmed
+      with the user): `displayNameSchema` clamps to `MAX_NAME_LENGTH` via `v.transform()`
+      rather than rejecting via `v.maxLength()` — only empty/whitespace-only still blocks
+      (`v.minLength(1)`), per quickstart.md's Edge Case scenario 8. Smoke-tested the fallback
+      behavior directly (see also T005's note on the one Valibot quirk found): valid input
+      passes through, an overlong name clamps, an empty/invalid field falls back per-field
+      while a valid sibling field is preserved, and a `null` blob fails `v.safeParse()`
+      outright.
+- [X] T004 [P] Implement `generateDefaultName()` pure function in
+      `apps/client/src/lib/entry/default-name.ts` (depends on T001). Combines a random
+      adjective + noun + 2-digit number, e.g. "Quiet Fox 42".
+- [X] T005 Implement `GuestProfileStore` (`load()`/`save()`, wrapping `localStorage` in
       `try/catch`, parsing loaded data via `guestProfileSchema`) in
-      `apps/client/src/lib/entry/guest-profile-store.ts` (depends on T003, T004)
+      `apps/client/src/lib/entry/guest-profile-store.ts` (depends on T003, T004). Valibot
+      quirk found while smoke-testing: `v.object()` accepts a stored *array* as structurally
+      valid (`typeof [] === 'object'`) rather than failing outright as data-model.md describes
+      for "not an object at all" — but every field is then missing, so both fall back exactly
+      as if there were no stored profile at all. Net observable behavior for `load()` still
+      matches the spec's intent (treated as first-time visitor); not worth a stricter check to
+      reject arrays explicitly, since the outcome is already identical.
 
 **Checkpoint**: Storage/validation layer ready; no UI yet.
 
