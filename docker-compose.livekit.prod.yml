@@ -8,8 +8,13 @@
 # docker-compose.livekit.yml's dev-only fixed "devkey"/"secret").
 #
 # Verified against the real image (v1.13.5): with no --bind flag, it already listens on all
-# interfaces inside the container, and its default RTC ICE port range (50000-60000) is used
-# below rather than overriding it.
+# interfaces inside the container. The RTC UDP range is narrowed from LiveKit's own default
+# (50000-60000, 10001 ports) to 50000-50100 (101 ports) — publishing the full default range
+# made `docker compose up` take long enough (creating ~10k iptables/NAT rules) to blow past
+# Coolify's deployment timeout and fail outright. 101 ports is still generous for this MVP's
+# scale (one shared room, a handful of concurrent participants — each ties up ~1 UDP port);
+# widen it later if actually needed. LIVEKIT_RTC_PORT_RANGE_START/END must be set to match, so
+# LiveKit doesn't pick a port outside what's actually published.
 services:
   livekit:
     image: livekit/livekit-server:v1.13.5
@@ -17,7 +22,9 @@ services:
     environment:
       NODE_IP: ${NODE_IP}
       LIVEKIT_KEYS: ${LIVEKIT_KEYS}
+      LIVEKIT_RTC_PORT_RANGE_START: '50000'
+      LIVEKIT_RTC_PORT_RANGE_END: '50100'
     ports:
       - '7880:7880' # HTTP + WebSocket signaling (routed through Coolify's proxy/domain)
       - '7881:7881/tcp' # WebRTC over TCP (fallback) — direct host exposure, bypasses the proxy
-      - '50000-60000:50000-60000/udp' # WebRTC over UDP (LiveKit's default ICE range)
+      - '50000-50100:50000-50100/udp' # WebRTC over UDP (narrowed range, see note above)
