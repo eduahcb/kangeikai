@@ -16,6 +16,7 @@
     "@kangeikai/shared": "workspace:*",
     "colyseus": "^0.17.10",
     "express": "^5.2.1",
+    "livekit-server-sdk": "^2.18.0",
     "valibot": "^1.4.2"
   },
   "devDependencies": {

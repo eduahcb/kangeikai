@@ -13,16 +13,28 @@ automated tests of real WebRTC media).
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 [P] Add the `livekit-client` dependency to `apps/client/package.json`
-- [ ] T002 [P] Add the `livekit-server-sdk` dependency to `apps/server/package.json`
-- [ ] T003 [P] Document required `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
+- [X] T001 [P] Add the `livekit-client` dependency to `apps/client/package.json`
+- [X] T002 [P] Add the `livekit-server-sdk` dependency to `apps/server/package.json`
+- [X] T003 [P] Document required `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
       environment variables (matching the dev compose file's fixed values) in
-      `apps/server/.env.example`
-- [ ] T004 [P] Create `docker-compose.livekit.yml` at the repository root: a LiveKit dev
+      `apps/server/.env.example`. No code needed to load it — `colyseus` re-exports
+      `@colyseus/tools`, which already auto-loads `.env.development`/`.env` (via `dotenv`) as
+      a side effect of import, confirmed by the "optional .env file not found" log line
+      `apps/server`'s `pnpm dev` already prints on startup.
+- [X] T004 [P] Create `docker-compose.livekit.yml` at the repository root: a LiveKit dev
       server with fixed dev API key/secret and mapped ports (HTTP/WS + RTC TCP/UDP), per the
-      constitution's local development environment requirement
-- [ ] T005 [P] Add the `valibot` dependency to `apps/server/package.json` (request-body
-      validation, per constitution Principle V)
+      constitution's local development environment requirement. Uses `livekit-server`'s
+      built-in `--dev` mode (in-memory, fixed `devkey`/`secret` keys — no official
+      docker-compose example exists in LiveKit's docs, confirmed by checking, so this
+      composes the plain `--dev` docker-run flags researched instead); `--bind 0.0.0.0` is
+      required for the host port mapping to reach the signal server (default bind is
+      loopback-only inside the container) and `--node-ip 127.0.0.1` is correct for local dev
+      where every participant connects via localhost. Validated end-to-end: `docker compose
+      -f docker-compose.livekit.yml up`, confirmed the logged ports/keys/node IP match, and
+      `curl localhost:7880` returned 200.
+- [X] T005 [P] Add the `valibot` dependency to `apps/server/package.json` (request-body
+      validation, per constitution Principle V). Already present from spec 002 — no change
+      needed.
 
 **Checkpoint**: `docker compose -f docker-compose.livekit.yml up` starts a local LiveKit
 server; dependencies installed; env var contract documented.
