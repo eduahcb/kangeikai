@@ -29,8 +29,10 @@ automated tests of real WebRTC media).
       composes the plain `--dev` docker-run flags researched instead); `--bind 0.0.0.0` is
       required for the host port mapping to reach the signal server (default bind is
       loopback-only inside the container) and `--node-ip 127.0.0.1` is correct for local dev
-      where every participant connects via localhost. Validated end-to-end: `docker compose
-      -f docker-compose.livekit.yml up`, confirmed the logged ports/keys/node IP match, and
+      where every participant connects via localhost. Pins the image to `v1.13.5` rather than
+      `latest`, for a reproducible dev environment. Validated end-to-end (both the initial
+      `latest` pull and, after pinning, `v1.13.5`): `docker compose -f
+      docker-compose.livekit.yml up`, confirmed the logged ports/keys/node IP match, and
       `curl localhost:7880` returned 200.
 - [X] T005 [P] Add the `valibot` dependency to `apps/server/package.json` (request-body
       validation, per constitution Principle V). Already present from spec 002 — no change

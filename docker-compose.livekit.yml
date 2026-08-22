@@ -5,7 +5,7 @@
 # Matches apps/server/.env.example's LIVEKIT_URL/LIVEKIT_API_KEY/LIVEKIT_API_SECRET values.
 services:
   livekit:
-    image: livekit/livekit-server:latest
+    image: livekit/livekit-server:v1.13.5
     # --dev: in-memory single-node mode with the fixed "devkey"/"secret" API key/secret pair.
     # --bind 0.0.0.0: without this the signal server only binds to the container's own
     # loopback, which the host-side port mapping below can't reach.
