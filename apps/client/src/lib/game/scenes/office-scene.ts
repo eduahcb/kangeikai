@@ -130,6 +130,17 @@ export class OfficeScene extends Phaser.Scene {
     this.mapHeightPx = map.heightInPixels
     this.cameras.main.setZoom(CAMERA_ZOOM)
 
+    // welcome.tmj's "zones" object layer (desk-*/public-space-* — feature 001's FR-010,
+    // spec 003's FR-011 zone-membership override).
+    const zoneObjects = map.getObjectLayer('zones')?.objects ?? []
+    this.proximityAudioController.setZones(zoneObjects.map(object => ({
+      name: object.name,
+      x: object.x ?? 0,
+      y: object.y ?? 0,
+      width: object.width ?? 0,
+      height: object.height ?? 0,
+    })))
+
     for (const spriteType of AVATAR_SPRITE_TYPES) {
       for (const segment of AVATAR_MOTION_SEGMENTS) {
         const textureKey = avatarTextureKey(spriteType, segment)

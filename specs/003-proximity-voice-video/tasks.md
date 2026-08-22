@@ -241,13 +241,46 @@ independent test (spec.md acceptance scenarios 1–3) cannot actually be exercis
 This blocks the Phase 3 checkpoint's claim of being "fully functional and independently
 testable."
 
-- [ ] T022 [US1] Expose `RoomConnection`'s local Colyseus `sessionId` (needed as the LiveKit
+- [X] T022 [US1] Expose `RoomConnection`'s local Colyseus `sessionId` (needed as the LiveKit
       `identity`, per `contracts/livekit-token-endpoint.md`'s Stability section, and to key
       remote-position lookups) in `apps/client/src/lib/network/room-connection.ts` per
       US1/AC1-3 (missing)
-- [ ] T023 [US1] Wire `ProximityAudioController` into `OfficeScene`: instantiate it once the
+- [X] T023 [US1] Wire `ProximityAudioController` into `OfficeScene`: instantiate it once the
       local avatar has a synced position (FR-008), call `connect()` with the local `sessionId`/
       display name and position, then call `update()` every frame with the local avatar's
       position and a `sessionId → position` map built from the scene's already-tracked remote
       avatars, in `apps/client/src/lib/game/scenes/office-scene.ts` (depends on T022) per
-      US1/AC1-3, Phase 3 checkpoint (missing)
+      US1/AC1-3, Phase 3 checkpoint (missing). Manually validated in two real browser windows:
+      both connect to the shared LiveKit room without error.
+
+---
+
+## Phase 8: Convergence
+
+Found by a second `/speckit-converge` pass, ahead of starting Phase 4: no zone-membership
+computation exists anywhere in the code — `ProximityAudioController.update()` applies pure
+distance-based `proximityVolume` unconditionally, contradicting Constitution Principle II's
+explicit MUST ("Named zones within the one fixed map were unlocked because... the zone override
+preserves this") and FR-011/FR-012. This also retroactively affects the already-merged Phase 3
+(two avatars sharing a zone but >200px apart within it are wrongly silent) and would have
+blocked Phase 4's video-tile "nearby" gating (Acceptance Scenario 1) had it been built first.
+Feature 001 never implemented its own FR-010 zone parser either, but `welcome.tmj` already has
+a `zones` object layer authored (`desk-01`..`10`, `public-space-01`/`02`) — no map-authoring
+change is needed, since the `desk-*`/`public-space-*` name prefixes already unambiguously
+disambiguate the only two allowed tag categories without needing a `tag` property.
+
+- [X] T024 [US1] Parse `welcome.tmj`'s `zones` object layer (via Phaser's already-loaded
+      `Tilemap.getObjectLayer('zones')`, reusing what `office-scene.ts` already parses rather
+      than re-fetching the file) into a plain `Zone[]` list, exposed through a pure
+      `zoneAt(zones, x, y): string | null` lookup, in a new
+      `apps/client/src/lib/game/map/zone-lookup.ts` per Constitution Principle II, FR-011
+      (missing). Verified against the real map data: 12 zones authored, none overlap, and the
+      existing spawn point (150, 150) falls outside all of them — matching data-model.md's
+      non-overlap assumption and office-scene.ts's existing spawn-placement comment. Also adds
+      a unit test (`apps/client/tests/unit/zone-lookup.spec.ts`).
+- [X] T025 [US1] Apply the zone-membership override in `ProximityAudioController.update()`:
+      full volume (`1`) when the local and remote avatar share a non-null zone (via `zoneAt`),
+      falling back to `proximityVolume(distance, hearingRangePx)` otherwise
+      (data-model.md's `ProximityRelationship.volume` rule, FR-011/FR-012), in
+      `apps/client/src/lib/av/proximity-audio-controller.ts` (depends on T024) per
+      Constitution Principle II, FR-011/FR-012 (missing)
