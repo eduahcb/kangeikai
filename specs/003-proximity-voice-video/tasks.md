@@ -135,20 +135,24 @@ plus sees the indicator (spec.md acceptance scenarios for Story 2).
       resolves and best-effort auto-enables the microphone (matches US1's "just works"
       premise; camera stays off, opt-in via T017's UI) — graceful handling of a denied/missing
       device is explicitly Phase 5's job (T018), not hardened here yet.
-- [X] T015 [US2] Implement `avatar-video-overlay.svelte`: render `<video>` tiles positioned at
-      each nearby avatar's current screen-space coordinates for participants with camera
-      enabled, styled with a plain scoped `<style>` block (no CSS framework, per constitution
-      Principle V) (depends on T009; reads screen position from feature 001's camera/scene).
-      Bridged via a small Svelte 5 runes module (`video-overlay-state.svelte.ts`) that
-      `OfficeScene.update()` writes into every frame — Phaser's imperative loop and Svelte's
-      declarative component tree don't share state natively. "Nearby" reuses
-      `ProximityAudioController.update()`'s returned session-id set (T011/T012's distance/zone
-      computation) rather than recomputing it, per spec.md's US2 acceptance scenarios tying
-      video visibility to the same "close enough to hear" condition as audio.
+- [X] T015 [US2] Implement `avatar-video-overlay.svelte`: render `<video>` tiles for nearby
+      participants with camera enabled, styled with a plain scoped `<style>` block (no CSS
+      framework, per constitution Principle V) (depends on T009). Redesigned after initial
+      review from screen-position-following tiles to a fixed Gather.town-style strip in the
+      corner (per user-provided reference screenshot) — always includes the local participant
+      ("You"), and a camera-off nearby participant still renders as a skeleton placeholder
+      (initial-letter avatar circle + mic-status dot) rather than being omitted. Bridged via a
+      small Svelte 5 runes module (`video-overlay-state.svelte.ts`) that `OfficeScene.update()`
+      writes into every frame — Phaser's imperative loop and Svelte's declarative component
+      tree don't share state natively. "Nearby" reuses `ProximityAudioController.update()`'s
+      returned session-id set (T011/T012's distance/zone computation) rather than recomputing
+      it, per spec.md's US2 acceptance scenarios tying video visibility to the same "close
+      enough to hear" condition as audio.
 - [X] T016 [US2] Render a muted indicator on nearby avatars, driven by LiveKit's
       `isMicrophoneEnabled` per participant (FR-006), in `avatar-video-overlay.svelte` or a
-      sibling component (depends on T009). Implemented in the same component/state bridge as
-      T015, since both need the same per-tile nearby-participant data.
+      sibling component (depends on T009). Implemented as a colored dot on each tile (green =
+      unmuted, gray = muted) in the same component/state bridge as T015, since both need the
+      same per-tile nearby-participant data.
 - [X] T017 [US2] Wire `MediaControls`' mute/camera-toggle UI into the page in
       `apps/client/src/routes/+page.svelte` (depends on T014). `OfficeScene` hands off the
       `MediaControls` instance via a Phaser game event (`MEDIA_CONTROLS_READY_EVENT`) once
