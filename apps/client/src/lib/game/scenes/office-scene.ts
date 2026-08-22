@@ -242,7 +242,10 @@ export class OfficeScene extends Phaser.Scene {
     }
 
     this.proximityAudioController
-      .connect({ identity: sessionId, name: this.displayName }, { x: this.avatar.x, y: this.avatar.y })
+      .connect(
+        { identity: sessionId, name: this.displayName, proof: this.roomConnection.sessionProof ?? '' },
+        { x: this.avatar.x, y: this.avatar.y },
+      )
       .then(async () => {
         const mediaControls = new MediaControls(this.proximityAudioController.liveKitRoom)
 

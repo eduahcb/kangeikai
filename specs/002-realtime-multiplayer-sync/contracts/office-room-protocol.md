@@ -22,6 +22,14 @@ The server assigns a `sessionId` and adds a `ParticipantSession` to `OfficeRoomS
 seeding `avatarState` with the given `spriteType` and a valid spawn position (feature 001's
 `MapDefinition` invariant: spawn must be outside the collision layer).
 
+The server also sends a one-off `"sessionProof"` message (`{ proof: string }`, an HMAC of
+`sessionId` — see `apps/server/src/session-proof.ts`), which the client MUST include as
+`proof` when requesting a LiveKit token (spec 003's `contracts/livekit-token-endpoint.md`) —
+this is how that endpoint confirms a token request's `identity` came from a real session
+rather than an unauthenticated caller (security review finding, spec 003). Best-effort: a
+missing `SESSION_SIGNING_SECRET` server-side skips sending it rather than failing the join,
+so proximity audio/video degrades gracefully instead of blocking movement/presence (FR-009).
+
 ## Server → Client: State Sync
 
 The server exposes `OfficeRoomState` (see `data-model.md`) as a Colyseus `Schema`. The client

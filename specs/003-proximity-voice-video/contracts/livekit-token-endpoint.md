@@ -11,6 +11,7 @@ scoped LiveKit access token before joining the shared proximity audio/video room
 interface LiveKitTokenRequest {
   identity: string; // MUST equal the participant's Colyseus sessionId (see research.md)
   name: string;      // Guest display name, chosen in the guest entry flow feature (004)
+  proof: string;     // HMAC from OfficeRoom's "sessionProof" message — proves identity is real
 }
 ```
 
@@ -24,10 +25,16 @@ interface LiveKitTokenResponse {
 ```
 
 **Server behavior**:
-- Validates the request body against a Valibot schema (`identity` and `name` both required,
-  non-empty strings) before doing anything else — this is a system boundary (untrusted input
-  from the client over HTTP), per constitution Principle V. A validation failure returns an
-  error response and never reaches the token-minting step.
+- Validates the request body against a Valibot schema (`identity`, `name`, and `proof` all
+  required, non-empty strings) before doing anything else — this is a system boundary
+  (untrusted input from the client over HTTP), per constitution Principle V. A validation
+  failure returns an error response and never reaches the token-minting step.
+- Verifies `proof` against `identity` via `session-proof.ts`'s `verifySessionProof()` (an HMAC
+  keyed by the server-only `SESSION_SIGNING_SECRET`) — rejects with `403` if it doesn't match.
+  This confirms `identity` actually came from `OfficeRoom.onJoin` rather than being forged by
+  an unauthenticated caller hitting this endpoint directly (security review finding: prior to
+  this, any `identity`/`name` was accepted, letting anyone mint a token for the shared room's
+  audio/video without ever going through the game).
 - Uses `livekit-server-sdk` to mint a token granting join access to exactly one, fixed,
   well-known room name (the single shared space — no room selection).
 - Reads LiveKit connection/signing configuration (`LIVEKIT_URL`, `LIVEKIT_API_KEY`,
