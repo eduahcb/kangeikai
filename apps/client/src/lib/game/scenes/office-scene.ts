@@ -113,6 +113,15 @@ interface RemoteAvatarEntry {
  */
 const REMOTE_AVATAR_SMOOTHING_TAU_SECONDS = 0.08
 
+/**
+ * Passed via `game.scene.add('office', OfficeScene, true, data)` — the confirmed guest
+ * identity from spec 004's entry flow (`contracts/guest-profile-handoff.md`).
+ */
+export interface OfficeSceneData {
+  displayName: string
+  spriteType: AvatarSpriteType
+}
+
 export class OfficeScene extends Phaser.Scene {
   private readonly movementController = new MovementController()
   private readonly roomConnection = new RoomConnection()
@@ -122,9 +131,16 @@ export class OfficeScene extends Phaser.Scene {
   private avatarView!: Phaser.GameObjects.Sprite
   private mapWidthPx = 0
   private mapHeightPx = 0
+  private displayName!: string
+  private spriteType!: AvatarSpriteType
 
   constructor() {
     super('office')
+  }
+
+  init(data: OfficeSceneData): void {
+    this.displayName = data.displayName
+    this.spriteType = data.spriteType
   }
 
   preload(): void {
@@ -186,8 +202,8 @@ export class OfficeScene extends Phaser.Scene {
       }
     }
 
-    this.avatar = new Avatar(SPAWN_X, SPAWN_Y, 'man', this.mapWidthPx, this.mapHeightPx)
-    this.avatarView = this.add.sprite(this.avatar.x, this.avatar.y, avatarTextureKey('man', 'idle'))
+    this.avatar = new Avatar(SPAWN_X, SPAWN_Y, this.spriteType, this.mapWidthPx, this.mapHeightPx)
+    this.avatarView = this.add.sprite(this.avatar.x, this.avatar.y, avatarTextureKey(this.spriteType, 'idle'))
     this.avatarView.anims.play(getSpriteAnimation(this.avatar.spriteType, this.avatar.motionState, this.avatar.direction).key)
 
     this.input.keyboard?.on('keydown', this.handleKeyDown, this)
@@ -197,9 +213,7 @@ export class OfficeScene extends Phaser.Scene {
     this.roomConnection.onRemoteAvatarAdd((sessionId, state) => this.spawnRemoteAvatar(sessionId, state))
     this.roomConnection.onRemoteAvatarChange((sessionId, state) => this.updateRemoteAvatar(sessionId, state))
     this.roomConnection.onRemoteAvatarRemove(sessionId => this.removeRemoteAvatar(sessionId))
-    // spriteType is hardcoded 'man' for now, matching the local avatar above — spec 004
-    // (guest entry flow) will replace both with the guest's actual chosen spriteType.
-    this.roomConnection.connect({ spriteType: 'man' })
+    this.roomConnection.connect({ spriteType: this.spriteType })
       .then(() => this.connectProximityAudio())
       .catch((error: unknown) => {
         console.warn('kangeikai: failed to connect to the shared room', error)
@@ -227,10 +241,8 @@ export class OfficeScene extends Phaser.Scene {
       return
     }
 
-    // name is hardcoded for now, same placeholder pattern as spriteType above — spec 004
-    // (guest entry flow) will replace this with the guest's actual chosen display name.
     this.proximityAudioController
-      .connect({ identity: sessionId, name: 'Guest' }, { x: this.avatar.x, y: this.avatar.y })
+      .connect({ identity: sessionId, name: this.displayName }, { x: this.avatar.x, y: this.avatar.y })
       .then(async () => {
         const mediaControls = new MediaControls(this.proximityAudioController.liveKitRoom)
 
