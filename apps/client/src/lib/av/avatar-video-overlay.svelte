@@ -30,7 +30,13 @@
   {#each videoOverlayState.tiles as tile (tile.sessionId)}
     <div class='tile'>
       {#if tile.cameraEnabled && tile.videoTrack}
-        <video use:attachVideoTrack={tile.videoTrack} autoplay playsinline muted={tile.isLocal}></video>
+        <video
+          use:attachVideoTrack={tile.videoTrack}
+          autoplay
+          playsinline
+          muted={tile.isLocal}
+          class:mirrored={tile.isLocal}
+        ></video>
       {:else}
         <div class='placeholder'>
           <span class='avatar-circle'>
@@ -71,6 +77,12 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  /* Self-view convention (Zoom/Meet/etc.): mirror only your own preview, so it feels like
+     looking in a mirror — remote participants still see the unmirrored, "true" video. */
+  .tile video.mirrored {
+    transform: scaleX(-1);
   }
 
   .placeholder {
