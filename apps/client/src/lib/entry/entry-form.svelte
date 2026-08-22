@@ -18,9 +18,14 @@
      * code) — cleared as soon as the person edits the code again.
      */
     joinError?: string
+    /**
+     * True while a submitted room join is in flight — disables the form and shows a spinner
+     * on the submit button, rather than replacing this form with a separate loading screen.
+     */
+    pending?: boolean
   }
 
-  const { onConfirm, joinError }: Props = $props()
+  const { onConfirm, joinError, pending = false }: Props = $props()
 
   // Read once at component creation — pre-fills a returning visitor's previous choice (FR-005,
   // US2), or a friendly generated name for a first-time visitor (FR-006, US3) when nothing is
@@ -63,10 +68,11 @@
       autocomplete='off'
       maxlength={MAX_NAME_LENGTH}
       bind:value={name}
+      disabled={pending}
       oninput={() => (error = undefined)}
     />
 
-    <fieldset>
+    <fieldset disabled={pending}>
       <legend>Avatar</legend>
       <label>
         <input type='radio' name='avatarType' value='man' bind:group={avatarType} />
@@ -84,6 +90,7 @@
       type='password'
       autocomplete='off'
       bind:value={accessCode}
+      disabled={pending}
       oninput={() => (error = undefined)}
     />
 
@@ -93,7 +100,13 @@
       <p class='error'>{joinError}</p>
     {/if}
 
-    <button type='submit'>Enter</button>
+    <button type='submit' disabled={pending}>
+      {#if pending}
+        <span class='spinner'></span> Connecting…
+      {:else}
+        Enter
+      {/if}
+    </button>
   </form>
 </div>
 
@@ -163,6 +176,10 @@
   }
 
   button[type='submit'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 10px;
     border: none;
     border-radius: 6px;
@@ -171,5 +188,25 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+  }
+
+  button[type='submit']:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgb(58 32 48 / 30%);
+    border-top-color: #3a2030;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

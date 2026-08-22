@@ -15,8 +15,8 @@
 
   let guestProfile: GuestProfile | undefined = $state()
   // True from the moment the game is constructed until the Colyseus join actually succeeds —
-  // keeps the map covered so it never flashes visible right before a possible access-code
-  // rejection (ROOM_JOIN_FAILED_EVENT).
+  // keeps EntryForm mounted (pending) instead of revealing the map, so it never flashes
+  // visible right before a possible access-code rejection (ROOM_JOIN_FAILED_EVENT).
   let connecting = $state(false)
   let joinError: string | undefined = $state()
   let mediaControls: MediaControls | undefined = $state()
@@ -104,10 +104,8 @@
   {/if}
 </div>
 
-{#if !guestProfile}
-  <EntryForm onConfirm={handleEntryConfirm} {joinError} />
-{:else if connecting}
-  <div class='connecting-overlay'>Connecting…</div>
+{#if !guestProfile || connecting}
+  <EntryForm onConfirm={handleEntryConfirm} {joinError} pending={connecting} />
 {:else}
   <div class='media-controls'>
     <button type='button' disabled={!mediaControls || micUnavailable} onclick={toggleMicrophone}>
@@ -148,18 +146,5 @@
   .media-controls button:disabled {
     cursor: not-allowed;
     opacity: 0.5;
-  }
-
-  /* Covers the map while the Colyseus join is in flight, so it never flashes visible right
-     before a possible access-code rejection. */
-  .connecting-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #1a1a1a;
-    color: #fff;
-    font-size: 16px;
   }
 </style>
