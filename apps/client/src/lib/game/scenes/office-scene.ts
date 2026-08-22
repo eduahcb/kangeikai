@@ -216,16 +216,16 @@ export class OfficeScene extends Phaser.Scene {
     // (guest entry flow) will replace this with the guest's actual chosen display name.
     this.proximityAudioController
       .connect({ identity: sessionId, name: 'Guest' }, { x: this.avatar.x, y: this.avatar.y })
-      .then(() => {
+      .then(async () => {
         const mediaControls = new MediaControls(this.proximityAudioController.liveKitRoom)
-        this.game.events.emit(MEDIA_CONTROLS_READY_EVENT, mediaControls)
 
         // Mic defaults to on (matches US1's "just works" proximity-audio premise); camera
-        // defaults to off and is opt-in via MediaControls' UI (T017). Permission-denied/no-
-        // device handling (US3, T018) lands in a later phase — this is a best-effort attempt.
-        mediaControls.setMicrophoneEnabled(true).catch((error: unknown) => {
-          console.warn('kangeikai: failed to enable microphone', error)
-        })
+        // defaults to off and is opt-in via MediaControls' UI (T017). A denied permission or
+        // missing device (US3) never throws here — MediaControls records it as
+        // `microphoneUnavailable` instead — and movement/presence sync (a separate connection,
+        // already established) is unaffected either way (FR-009).
+        await mediaControls.setMicrophoneEnabled(true)
+        this.game.events.emit(MEDIA_CONTROLS_READY_EVENT, mediaControls)
       })
       .catch((error: unknown) => {
         console.warn('kangeikai: failed to connect proximity audio/video', error)
