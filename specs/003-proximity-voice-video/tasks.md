@@ -47,18 +47,29 @@ server; dependencies installed; env var contract documented.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Implement the `POST /livekit-token` endpoint in
+- [X] T006 Implement the `POST /livekit-token` endpoint in
       `apps/server/src/http/livekit-token.ts`: validate the request body with a Valibot
       schema, then mint a token per `contracts/livekit-token-endpoint.md` (depends on T002,
-      T003, T005)
-- [ ] T007 Mount the token route on the existing HTTP server in `apps/server/src/index.ts`
-      (depends on T006)
-- [ ] T008 [P] Implement the `proximityVolume` pure function per
+      T003, T005). Express 5 ships no bundled types, so `@types/express` had to be added as a
+      dev dependency for this file to typecheck (undocumented prerequisite, not called out in
+      this task's file list — same kind of gap as spec 002 T009's `tsconfig` decorator note).
+      Validated end-to-end against a locally running LiveKit dev server: a well-formed request
+      returns a signed JWT + the configured URL, and both a missing field and an empty string
+      correctly return 400 without reaching token-minting.
+- [X] T007 Mount the token route on the existing HTTP server in `apps/server/src/index.ts`
+      (depends on T006). Uses `Server`'s documented `options.express` callback, which Colyseus
+      invokes with the same Express app instance the transport itself uses (`Server.attach()`
+      in `@colyseus/core`) — not a second, separate app.
+- [X] T008 [P] Implement the `proximityVolume` pure function per
       `contracts/proximity-volume-function.md` in `apps/client/src/lib/av/proximity-volume.ts`
       (depends on T001)
-- [ ] T009 Implement a `ProximityAudioController` skeleton — fetches a token from
+- [X] T009 Implement a `ProximityAudioController` skeleton — fetches a token from
       `/livekit-token` and connects to the single shared LiveKit room — in
-      `apps/client/src/lib/av/proximity-audio-controller.ts` (depends on T001, T007)
+      `apps/client/src/lib/av/proximity-audio-controller.ts` (depends on T001, T007). The
+      token-fetch half is validated against the real endpoint (above); `room.connect()` itself
+      needs real browser WebRTC (`livekit-client` targets the browser, not Node) and is
+      manually validated later, per this feature's established pattern of deferring anything
+      requiring real media to `quickstart.md` (research.md).
 
 **Checkpoint**: Client can obtain a token and connect to the local LiveKit room (T004); no
 volume logic yet.
