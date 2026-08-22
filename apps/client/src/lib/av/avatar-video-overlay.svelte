@@ -33,7 +33,7 @@
         <span class='overflow-count'>+{tile.overflowCount}</span>
       </div>
     {:else}
-      <div class='tile'>
+      <div class='tile' class:speaking={tile.speaking}>
         {#if tile.cameraEnabled && tile.videoTrack}
           <video
             use:attachVideoTrack={tile.videoTrack}
@@ -85,6 +85,14 @@
     overflow: hidden;
     border-radius: 12px;
     background: #000;
+    /* inset box-shadow instead of border — respects border-radius and doesn't shift layout. */
+    box-shadow: inset 0 0 0 2px transparent;
+    transition: box-shadow 0.1s ease-out;
+  }
+
+  /* Gather-style speaking indicator, driven by LiveKit's built-in active-speaker detection. */
+  .tile.speaking {
+    box-shadow: inset 0 0 0 2px #3b82f6;
   }
 
   .tile video {

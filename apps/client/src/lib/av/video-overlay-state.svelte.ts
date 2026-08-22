@@ -13,6 +13,11 @@ export interface VideoOverlayTile {
   isLocal: boolean
   cameraEnabled: boolean
   micEnabled: boolean
+  /**
+   * LiveKit's built-in active-speaker detection (`Participant.isSpeaking`) — drives the
+   * speaking-indicator border, Gather-style.
+   */
+  speaking: boolean
   videoTrack: LocalVideoTrack | RemoteVideoTrack | undefined
 }
 
