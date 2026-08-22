@@ -1,6 +1,7 @@
 import type { AvatarPosition } from '$lib/av/proximity-audio-controller'
+import type { VideoOverlayTile } from '$lib/av/video-overlay-state.svelte'
 import type { AvatarDirection, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
-import type { RemoteVideoTrack } from 'livekit-client'
+import type { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client'
 import interiorsUrl from '$lib/assets/maps/welcome/Interiors_32x32-used.png?url'
 import modernOfficeUrl from '$lib/assets/maps/welcome/Modern_Office_32x32.png?url'
 import roomBuilderUrl from '$lib/assets/maps/welcome/Room_Builder_32x32.png?url'
@@ -256,32 +257,39 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   /**
-   * Refreshes `videoOverlayState` (T015/T016) for every nearby ("close enough to hear",
-   * ProximityAudioController.update()'s return value — same condition per spec.md's US2
-   * acceptance scenarios) remote participant: their avatar's current screen-space position,
-   * camera/mic state, and video track (if publishing).
+   * Refreshes `videoOverlayState` (T015/T016) with a fixed-position strip: the local
+   * participant ("You") plus every nearby ("close enough to hear",
+   * `ProximityAudioController.update()`'s return value — same condition per spec.md's US2
+   * acceptance scenarios) remote participant. Each tile shows camera/mic state and video
+   * track (if publishing); a camera-off tile still renders (as a placeholder, per the
+   * component) rather than being omitted.
    */
   private updateVideoOverlay(nearbySessionIds: ReadonlySet<string>): void {
-    const camera = this.cameras.main
     const room = this.proximityAudioController.liveKitRoom
+    const { localParticipant } = room
 
-    const tiles = []
+    const tiles: VideoOverlayTile[] = [{
+      sessionId: localParticipant.identity,
+      name: localParticipant.name ?? 'You',
+      isLocal: true,
+      cameraEnabled: localParticipant.isCameraEnabled,
+      micEnabled: localParticipant.isMicrophoneEnabled,
+      videoTrack: localParticipant.getTrackPublication(Track.Source.Camera)?.track as LocalVideoTrack | undefined,
+    }]
+
     for (const sessionId of nearbySessionIds) {
-      const entry = this.remoteAvatars.get(sessionId)
       const participant = room.remoteParticipants.get(sessionId)
-      if (!entry || !participant) {
+      if (!participant) {
         continue
       }
 
-      const videoTrack = participant.getTrackPublication(Track.Source.Camera)?.track as RemoteVideoTrack | undefined
-
       tiles.push({
         sessionId,
-        screenX: (entry.avatar.x - camera.scrollX) * camera.zoom,
-        screenY: (entry.avatar.y - camera.scrollY) * camera.zoom,
+        name: participant.name || sessionId,
+        isLocal: false,
         cameraEnabled: participant.isCameraEnabled,
         micEnabled: participant.isMicrophoneEnabled,
-        videoTrack,
+        videoTrack: participant.getTrackPublication(Track.Source.Camera)?.track as RemoteVideoTrack | undefined,
       })
     }
 

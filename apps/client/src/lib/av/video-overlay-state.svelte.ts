@@ -1,13 +1,18 @@
-import type { RemoteVideoTrack } from 'livekit-client'
+import type { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client'
 
-/** One nearby remote participant's video-tile view-model, refreshed every frame. */
+/**
+ * One video-strip tile's view-model, refreshed every frame — always includes the local
+ * participant ("You") plus every nearby remote participant, camera on or off (a camera-off
+ * tile still renders a placeholder, per spec.md's US2 acceptance scenarios treating "nearby"
+ * as the visibility gate, not camera state).
+ */
 export interface VideoOverlayTile {
   sessionId: string
-  screenX: number
-  screenY: number
+  name: string
+  isLocal: boolean
   cameraEnabled: boolean
   micEnabled: boolean
-  videoTrack: RemoteVideoTrack | undefined
+  videoTrack: LocalVideoTrack | RemoteVideoTrack | undefined
 }
 
 /**
