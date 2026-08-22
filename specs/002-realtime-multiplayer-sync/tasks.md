@@ -182,11 +182,20 @@ resumes without a manual reload and other participants see no permanent gap (spe
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T023 Run `quickstart.md` validation scenarios end-to-end manually with two browser
-      windows, including the abrupt-disconnect and server-restart edge cases
-- [ ] T024 [P] Review `apps/server/src/rooms/office-room.ts` against `data-model.md` validation
+- [X] T023 Run `quickstart.md` validation scenarios end-to-end manually with two browser
+      windows, including the abrupt-disconnect and server-restart edge cases. All 8 scenarios
+      validated manually: movement/direction/motion-state sync (1-2), join/leave presence
+      (3-4), abrupt disconnect and brief reconnection via DevTools' Network "Offline" mode
+      (5-6), grace-period timeout (7), and server restart resetting all state with clients
+      returning to spawn on refresh (8, confirms FR-007's no-persistence guarantee).
+- [X] T024 [P] Review `apps/server/src/rooms/office-room.ts` against `data-model.md` validation
       rules (`players` excludes grace-period sessions; `spriteType` immutable post-join) and
-      confirm both message handlers actually go through `message-schemas.ts`
+      confirm both message handlers actually go through `message-schemas.ts`. Confirmed by
+      inspection: `onLeave` removes the avatar from `players` before `allowReconnection` and
+      only re-adds it on success (grace-period sessions excluded); `updateState`'s handler only
+      ever writes `x`/`y`/`direction`/`motionState`, never `spriteType`; `onJoin` validates via
+      `officeJoinOptionsSchema` and `updateState` via `updateStatePayloadSchema`, both from
+      `message-schemas.ts`. No code changes needed.
 
 ---
 
