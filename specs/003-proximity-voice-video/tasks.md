@@ -192,6 +192,24 @@ others still fully works (spec.md SC-003).
 - [ ] T021 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
       confirm no per-distance track subscribe/unsubscribe logic was introduced (only volume
       changes)
+- [ ] T026 [P] Smooth remote-avatar rendering: interpolate `updateRemoteAvatar` in
+      `apps/client/src/lib/game/scenes/office-scene.ts` (currently snaps `entry.avatar.x/y` and
+      `entry.view` directly to each incoming Colyseus state update, ~20/sec per
+      `room-connection.ts`'s `SEND_INTERVAL_MS`) by buffering the last two received positions
+      and lerping toward the latest one each render frame, instead of teleporting on each
+      network patch. Local player is unaffected (fully client-predicted, no network wait).
+      Manually validate with two browsers: the local player's own movement still looks
+      identical; the other browser's view of that same player's avatar should no longer visibly
+      "step" between positions.
+- [X] T027 [P] Cap the video strip when many participants share a zone/proximity radius:
+      `updateVideoOverlay` in `apps/client/src/lib/game/scenes/office-scene.ts` now sorts
+      `nearbySessionIds` by distance to the local avatar and shows only the closest
+      `MAX_REMOTE_VIDEO_TILES` (4) as tiles; any remainder collapses into a single "+N"
+      overflow tile (`VideoOverlayOverflowTile`, `video-overlay-state.svelte.ts`, rendered in
+      `avatar-video-overlay.svelte`). Audio (`ProximityAudioController`) is unaffected — the cap
+      is video-strip-only, so overflowed participants are still heard at full proximity/zone
+      volume. Addresses a gap `spec.md` FR-010 left open (audio-only "multiple simultaneously
+      nearby participants" language, no video tile-count/layout requirement existed before).
 
 ---
 
@@ -244,8 +262,8 @@ Task: "Add the valibot dependency to apps/server/package.json"
 
 ## Notes
 
-- Total tasks: 21 (T001–T021)
-- Per-story breakdown: Setup 5, Foundational 4, US1 4, US2 4, US3 2, Polish 2
+- Total tasks: 23 (T001–T021, T026–T027)
+- Per-story breakdown: Setup 5, Foundational 4, US1 4, US2 4, US3 2, Polish 4
 - Suggested MVP scope: Phase 3 (User Story 1) only, on top of features 001–002
 - All tasks above follow the required `- [ ] [ID] [P?] [Story?] Description with file path`
   format

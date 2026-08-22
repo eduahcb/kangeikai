@@ -1,7 +1,7 @@
 <script lang='ts'>
   import type { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client'
   import type { Action } from 'svelte/action'
-  import { videoOverlayState } from '$lib/av/video-overlay-state.svelte'
+  import { isOverflowTile, videoOverlayState } from '$lib/av/video-overlay-state.svelte'
 
   /** Attaches/detaches a LiveKit video track to this element as the track prop changes. */
   const attachVideoTrack: Action<HTMLVideoElement, LocalVideoTrack | RemoteVideoTrack | undefined> = (node, track) => {
@@ -27,26 +27,32 @@
 </script>
 
 <div class='strip'>
-  {#each videoOverlayState.tiles as tile (tile.sessionId)}
-    <div class='tile'>
-      {#if tile.cameraEnabled && tile.videoTrack}
-        <video
-          use:attachVideoTrack={tile.videoTrack}
-          autoplay
-          playsinline
-          muted={tile.isLocal}
-          class:mirrored={tile.isLocal}
-        ></video>
-      {:else}
-        <div class='placeholder'>
-          <span class='avatar-circle'>
-            {initial(tile.name)}
-            <span class='mic-dot' class:on={tile.micEnabled}></span>
-          </span>
-        </div>
-      {/if}
-      <span class='name-label'>{tile.isLocal ? 'You' : tile.name}</span>
-    </div>
+  {#each videoOverlayState.tiles as tile (isOverflowTile(tile) ? 'overflow' : tile.sessionId)}
+    {#if isOverflowTile(tile)}
+      <div class='tile overflow'>
+        <span class='overflow-count'>+{tile.overflowCount}</span>
+      </div>
+    {:else}
+      <div class='tile'>
+        {#if tile.cameraEnabled && tile.videoTrack}
+          <video
+            use:attachVideoTrack={tile.videoTrack}
+            autoplay
+            playsinline
+            muted={tile.isLocal}
+            class:mirrored={tile.isLocal}
+          ></video>
+        {:else}
+          <div class='placeholder'>
+            <span class='avatar-circle'>
+              {initial(tile.name)}
+              <span class='mic-dot' class:on={tile.micEnabled}></span>
+            </span>
+          </div>
+        {/if}
+        <span class='name-label'>{tile.isLocal ? 'You' : tile.name}</span>
+      </div>
+    {/if}
   {/each}
 </div>
 
@@ -56,17 +62,26 @@
     top: 16px;
     left: 50%;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
     gap: 12px;
+    max-width: min(1200px, 92vw);
     pointer-events: none;
     transform: translateX(-50%);
   }
 
+  /*
+   * Fixed cap (MAX_REMOTE_VIDEO_TILES) keeps the tile count bounded, but the row must still
+   * fit varying viewport widths without wrapping to a second line (that stacked over the game
+   * view). flex-shrink + aspect-ratio (instead of a fixed height) lets tiles shrink together
+   * down to min-width while staying in one row; growth is capped at 220px.
+   */
   .tile {
     position: relative;
     width: 220px;
-    height: 165px;
+    min-width: 100px;
+    aspect-ratio: 4 / 3;
+    flex: 1 1 220px;
     overflow: hidden;
     border-radius: 12px;
     background: #000;
@@ -121,6 +136,19 @@
 
   .mic-dot.on {
     background: #22c55e;
+  }
+
+  .tile.overflow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+  }
+
+  .overflow-count {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 600;
   }
 
   .name-label {

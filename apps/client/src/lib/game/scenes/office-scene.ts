@@ -1,5 +1,5 @@
 import type { AvatarPosition } from '$lib/av/proximity-audio-controller'
-import type { VideoOverlayTile } from '$lib/av/video-overlay-state.svelte'
+import type { VideoOverlayEntry } from '$lib/av/video-overlay-state.svelte'
 import type { AvatarDirection, AvatarSpriteType, AvatarState } from '@kangeikai/shared'
 import type { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client'
 import interiorsUrl from '$lib/assets/maps/welcome/Interiors_32x32-used.png?url'
@@ -31,6 +31,14 @@ export const MEDIA_CONTROLS_READY_EVENT = 'mediacontrols-ready'
  */
 const SPAWN_X = 150
 const SPAWN_Y = 150
+
+/**
+ * Cap on remote video tiles shown in the strip at once — beyond this, the closest
+ * `MAX_REMOTE_VIDEO_TILES` remain visible and the rest collapse into a single "+N" overflow
+ * tile (`updateVideoOverlay`). Keeps tiles legible regardless of how many participants share a
+ * zone/proximity radius; audio (`ProximityAudioController`) is unaffected by this cap.
+ */
+const MAX_REMOTE_VIDEO_TILES = 4
 
 const KEY_TO_DIRECTION: Record<string, AvatarDirection> = {
   ArrowUp: 'up',
@@ -258,12 +266,15 @@ export class OfficeScene extends Phaser.Scene {
 
   /**
    * Refreshes `videoOverlayState` (T015/T016) with a fixed-position strip: the local
-   * participant ("You") plus every nearby ("close enough to hear",
-   * `ProximityAudioController.update()`'s return value — same condition per spec.md's US2
-   * acceptance scenarios) remote participant. Each tile shows camera/mic state and video
-   * track (if publishing); a camera-off tile still renders (as a placeholder, per the
-   * component) rather than being omitted. The strip itself (including "You") is hidden
-   * entirely while alone — it only appears once at least one other participant is nearby.
+   * participant ("You") plus the `MAX_REMOTE_VIDEO_TILES` closest nearby ("close enough to
+   * hear", `ProximityAudioController.update()`'s return value — same condition per spec.md's
+   * US2 acceptance scenarios) remote participants, closest-first. Each tile shows camera/mic
+   * state and video track (if publishing); a camera-off tile still renders (as a placeholder,
+   * per the component) rather than being omitted. Any remaining nearby participants beyond the
+   * cap collapse into a single "+N" overflow tile (still audible — this cap only affects the
+   * video strip, not `ProximityAudioController` volume). The strip itself (including "You") is
+   * hidden entirely while alone — it only appears once at least one other participant is
+   * nearby.
    */
   private updateVideoOverlay(nearbySessionIds: ReadonlySet<string>): void {
     if (nearbySessionIds.size === 0) {
@@ -274,7 +285,9 @@ export class OfficeScene extends Phaser.Scene {
     const room = this.proximityAudioController.liveKitRoom
     const { localParticipant } = room
 
-    const tiles: VideoOverlayTile[] = [{
+    const closestSessionIds = [...nearbySessionIds].sort((a, b) => this.distanceToLocal(a) - this.distanceToLocal(b))
+
+    const entries: VideoOverlayEntry[] = [{
       sessionId: localParticipant.identity,
       name: localParticipant.name ?? 'You',
       isLocal: true,
@@ -283,13 +296,13 @@ export class OfficeScene extends Phaser.Scene {
       videoTrack: localParticipant.getTrackPublication(Track.Source.Camera)?.track as LocalVideoTrack | undefined,
     }]
 
-    for (const sessionId of nearbySessionIds) {
+    for (const sessionId of closestSessionIds.slice(0, MAX_REMOTE_VIDEO_TILES)) {
       const participant = room.remoteParticipants.get(sessionId)
       if (!participant) {
         continue
       }
 
-      tiles.push({
+      entries.push({
         sessionId,
         name: participant.name || sessionId,
         isLocal: false,
@@ -299,7 +312,21 @@ export class OfficeScene extends Phaser.Scene {
       })
     }
 
-    videoOverlayState.set(tiles)
+    const overflowCount = closestSessionIds.length - MAX_REMOTE_VIDEO_TILES
+    if (overflowCount > 0) {
+      entries.push({ overflowCount })
+    }
+
+    videoOverlayState.set(entries)
+  }
+
+  /** Euclidean distance in map pixels between the local avatar and a remote avatar. */
+  private distanceToLocal(sessionId: string): number {
+    const remote = this.remoteAvatars.get(sessionId)?.avatar
+    if (!remote) {
+      return Infinity
+    }
+    return Math.hypot(remote.x - this.avatar.x, remote.y - this.avatar.y)
   }
 
   private spawnRemoteAvatar(sessionId: string, state: AvatarState): void {
