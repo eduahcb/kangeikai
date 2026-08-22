@@ -3,8 +3,9 @@ import type { ColyseusTestServer } from '@colyseus/testing'
 import { boot } from '@colyseus/testing'
 import { WebSocketTransport } from '@colyseus/ws-transport'
 import { Server } from 'colyseus'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { OfficeRoom } from '../../src/rooms/office-room'
+import { computeSessionProof } from '../../src/session-proof'
 
 let colyseus: ColyseusTestServer
 
@@ -14,7 +15,12 @@ beforeAll(async () => {
   colyseus = await boot(server)
 })
 
+beforeEach(() => {
+  process.env.SESSION_SIGNING_SECRET = 'test-secret'
+})
+
 afterEach(async () => {
+  delete process.env.SESSION_SIGNING_SECRET
   await colyseus.cleanup()
 })
 
@@ -108,5 +114,16 @@ describe('officeRoom', () => {
     const reconnectedB = await colyseus.sdk.reconnect(reconnectionToken)
     expect(reconnectedB.sessionId).toBe(sessionId)
     await waitFor(clientA, () => clientA.state.players.has(sessionId))
+  })
+
+  it('sends a sessionProof on join that verifies against the client\'s own sessionId', async () => {
+    const room = await colyseus.createRoom('office', { spriteType: 'man' })
+    const client = await colyseus.connectTo(room, { spriteType: 'man' })
+
+    const proof = await new Promise<string>((resolve) => {
+      client.onMessage<{ proof: string }>('sessionProof', payload => resolve(payload.proof))
+    })
+
+    expect(proof).toBe(computeSessionProof(client.sessionId))
   })
 })
