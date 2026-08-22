@@ -1,4 +1,6 @@
+import type { Zone } from '$lib/game/map/zone-lookup'
 import type { AvatarState } from '@kangeikai/shared'
+import { zoneAt } from '$lib/game/map/zone-lookup'
 import { Room } from 'livekit-client'
 import { proximityVolume } from './proximity-volume'
 
@@ -33,9 +35,15 @@ interface LiveKitTokenResponse {
 export class ProximityAudioController {
   private readonly room = new Room()
   private readonly tokenEndpoint: string
+  private zones: readonly Zone[] = []
 
   constructor(tokenEndpoint: string = DEFAULT_TOKEN_ENDPOINT) {
     this.tokenEndpoint = tokenEndpoint
+  }
+
+  /** The map's named voice/video activation zones (feature 001's `zones` object layer). */
+  setZones(zones: readonly Zone[]): void {
+    this.zones = zones
   }
 
   /**
@@ -54,14 +62,23 @@ export class ProximityAudioController {
 
   /**
    * Called once per local animation frame: matches each connected LiveKit participant's
-   * `identity` to their synced avatar position (feature 002), computes distance from the
-   * local avatar, and applies `proximityVolume` to their microphone track (FR-002/FR-003).
-   * Zone-membership override (FR-011) lands in a later phase.
+   * `identity` to their synced avatar position (feature 002), then sets that participant's
+   * microphone volume to full when they share zone membership with the local avatar
+   * (FR-011), otherwise to `proximityVolume` of the distance between them (FR-002/FR-003,
+   * FR-012) — data-model.md's `ProximityRelationship.volume` rule.
    */
   update(localPosition: AvatarPosition, remotePositions: ReadonlyMap<string, AvatarPosition>): void {
+    const localZone = zoneAt(this.zones, localPosition.x, localPosition.y)
+
     for (const [identity, participant] of this.room.remoteParticipants) {
       const remotePosition = remotePositions.get(identity)
       if (!remotePosition) {
+        continue
+      }
+
+      const sharedZone = localZone !== null && zoneAt(this.zones, remotePosition.x, remotePosition.y) === localZone
+      if (sharedZone) {
+        participant.setVolume(1)
         continue
       }
 
