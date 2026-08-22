@@ -197,21 +197,36 @@ others still fully works (spec.md SC-003).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T020 Run `quickstart.md` validation scenarios end-to-end manually with two real
+- [X] T020 Run `quickstart.md` validation scenarios end-to-end manually with two real
       devices/browsers, including the multi-participant and independence-from-movement-sync
-      edge cases
-- [ ] T021 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
+      edge cases. Solo-maintainer constraint: only one physical microphone was available, so
+      scenarios needing two live, separately-audible participants (1, 2, 3, 5, 7) couldn't be
+      heard end-to-end on real hardware — their distance→volume math is covered instead by
+      `proximity-volume.spec.ts` (deterministic Vitest coverage). What *was* manually
+      confirmed on real hardware: scenario 8 (permission denied — movement/hearing/seeing
+      others still works, no error, mic toggle shows disabled), plus the video-strip cap/
+      overflow behavior (T027) and remote-avatar smoothing (T026). Revisit scenarios 1/2/3/5/7
+      with a second physical device (e.g. a phone) when one is available.
+- [X] T021 [P] Review `proximity-audio-controller.ts` against constitution Principle II —
       confirm no per-distance track subscribe/unsubscribe logic was introduced (only volume
-      changes)
-- [ ] T026 [P] Smooth remote-avatar rendering: interpolate `updateRemoteAvatar` in
+      changes). Confirmed: `update()` only calls `participant.setVolume(volume)`; the only
+      "subscribe" reference anywhere in the codebase is the static `canSubscribe: true` grant
+      in `apps/server/src/http/livekit-token.ts` (a fixed token permission, not per-distance
+      logic). No dynamic track subscribe/unsubscribe, server-side routing, or isolated rooms
+      exist.
+- [X] T026 [P] Smooth remote-avatar rendering: interpolate `updateRemoteAvatar` in
       `apps/client/src/lib/game/scenes/office-scene.ts` (currently snaps `entry.avatar.x/y` and
       `entry.view` directly to each incoming Colyseus state update, ~20/sec per
       `room-connection.ts`'s `SEND_INTERVAL_MS`) by buffering the last two received positions
       and lerping toward the latest one each render frame, instead of teleporting on each
       network patch. Local player is unaffected (fully client-predicted, no network wait).
-      Manually validate with two browsers: the local player's own movement still looks
-      identical; the other browser's view of that same player's avatar should no longer visibly
-      "step" between positions.
+      Implemented as exponential smoothing rather than a two-sample buffer: each
+      `RemoteAvatarEntry` now tracks a `renderX`/`renderY` eased toward `avatar.x/y` (the raw
+      network target) every frame via `updateRemoteAvatarViews`
+      (`REMOTE_AVATAR_SMOOTHING_TAU_SECONDS = 0.08`); distance-based logic (proximity/zone/video
+      ordering) still reads the un-eased `avatar.x/y` directly. Manually validate with two
+      browsers: the local player's own movement still looks identical; the other browser's view
+      of that same player's avatar should no longer visibly "step" between positions.
 - [X] T027 [P] Cap the video strip when many participants share a zone/proximity radius:
       `updateVideoOverlay` in `apps/client/src/lib/game/scenes/office-scene.ts` now sorts
       `nearbySessionIds` by distance to the local avatar and shows only the closest
