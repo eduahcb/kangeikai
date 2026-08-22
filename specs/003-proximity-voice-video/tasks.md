@@ -174,11 +174,22 @@ others still fully works (spec.md SC-003).
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Handle `getUserMedia`/LiveKit-publish failure (permission denied or no
+- [X] T018 [US3] Handle `getUserMedia`/LiveKit-publish failure (permission denied or no
       device) without blocking the room connection itself, in
-      `proximity-audio-controller.ts` (depends on T009)
-- [ ] T019 [US3] Make `MediaControls` reflect a "no device / denied" state by disabling the
-      relevant toggle rather than erroring, in `media-controls.ts` (depends on T014, T018)
+      `proximity-audio-controller.ts` (depends on T009). Landed in `media-controls.ts` instead
+      of `proximity-audio-controller.ts` — publishing is `MediaControls`' responsibility, not
+      the proximity controller's; `ProximityAudioController.connect()` (LiveKit room
+      connection) was already independent of media publish and unaffected by this. Room
+      connection and Colyseus movement/presence sync were already on separate code paths, so
+      FR-009 held structurally before this task too — this task's actual gap was the toggle UI
+      (see T019).
+- [X] T019 [US3] Make `MediaControls` reflect a "no device / denied" state by disabling the
+      relevant toggle rather than erroring, in `media-controls.ts` (depends on T014, T018).
+      `setMicrophoneEnabled`/`setCameraEnabled` now catch internally and expose
+      `microphoneUnavailable`/`cameraUnavailable` instead of throwing; `office-scene.ts` awaits
+      the initial mic auto-enable attempt before emitting `MEDIA_CONTROLS_READY_EVENT` so
+      `+page.svelte` reflects the final state immediately, and its two toggle buttons disable
+      themselves and relabel to "unavailable" once set.
 
 **Checkpoint**: All three user stories independently functional.
 

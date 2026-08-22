@@ -11,6 +11,8 @@
   let mediaControls: MediaControls | undefined = $state()
   let micEnabled = $state(false)
   let cameraEnabled = $state(false)
+  let micUnavailable = $state(false)
+  let cameraUnavailable = $state(false)
 
   onMount(() => {
     game = new Phaser.Game({
@@ -35,6 +37,8 @@
       mediaControls = controls
       micEnabled = controls.microphoneEnabled
       cameraEnabled = controls.cameraEnabled
+      micUnavailable = controls.microphoneUnavailable
+      cameraUnavailable = controls.cameraUnavailable
     })
   })
 
@@ -48,6 +52,7 @@
     }
     await mediaControls.setMicrophoneEnabled(!micEnabled)
     micEnabled = mediaControls.microphoneEnabled
+    micUnavailable = mediaControls.microphoneUnavailable
   }
 
   async function toggleCamera(): Promise<void> {
@@ -56,6 +61,7 @@
     }
     await mediaControls.setCameraEnabled(!cameraEnabled)
     cameraEnabled = mediaControls.cameraEnabled
+    cameraUnavailable = mediaControls.cameraUnavailable
   }
 </script>
 
@@ -64,11 +70,11 @@
 </div>
 
 <div class='media-controls'>
-  <button type='button' disabled={!mediaControls} onclick={toggleMicrophone}>
-    {micEnabled ? '🎤 Mute' : '🔇 Unmute'}
+  <button type='button' disabled={!mediaControls || micUnavailable} onclick={toggleMicrophone}>
+    {micUnavailable ? '🔇 Mic unavailable' : micEnabled ? '🎤 Mute' : '🔇 Unmute'}
   </button>
-  <button type='button' disabled={!mediaControls} onclick={toggleCamera}>
-    {cameraEnabled ? '📷 Turn camera off' : '📷 Turn camera on'}
+  <button type='button' disabled={!mediaControls || cameraUnavailable} onclick={toggleCamera}>
+    {cameraUnavailable ? '📷 Camera unavailable' : cameraEnabled ? '📷 Turn camera off' : '📷 Turn camera on'}
   </button>
 </div>
 
